@@ -1,4 +1,4 @@
-# job-scrapper
+# job-bot
 
 Scrapes job postings from Indeed, LinkedIn, and Dice for a given keyword and exports them to a single CSV — useful for analyzing the core requirements of a role.
 
