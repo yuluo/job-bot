@@ -4,3 +4,9 @@ __pycache__/
 *.csv
 output/
 .DS_Store
+
+clients/*
+!clients/.gitkeep
+resume/*
+!resume/.gitkeep
+applications/

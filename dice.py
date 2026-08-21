@@ -89,7 +89,12 @@ def search(keyword, location=None, results_wanted=100, fetch_descriptions=True):
                 "location": (job.get("jobLocation") or {}).get("displayName"),
                 "date_posted": job.get("postedDate"),
                 "salary": job.get("salary"),
+                "employment_type": job.get("employmentType"),
+                "remote": job.get("workFromHomeAvailability"),
+                "sponsorship": job.get("willingToSponsor"),
+                "easy_apply": job.get("easyApply"),
                 "job_url": url,
+                "job_url_direct": None,
                 "description": description,
             }
         )

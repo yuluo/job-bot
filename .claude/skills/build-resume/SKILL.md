@@ -65,5 +65,14 @@ support.
 ## Step 6 — Write the output and report
 
 Create the `resume/` folder if needed and write the file to
-`resume/<client>_<slug>_resume.html` (e.g. `resume/tom_power-bi_resume.html`). Report the output
-path and tell the user to open it in a browser and use Print → Save as PDF to produce the PDF.
+`resume/<client>_<slug>_resume.html` (e.g. `resume/tom_power-bi_resume.html`).
+
+Then render the print-ready PDF alongside it:
+
+```bash
+.venv/bin/python render_pdf.py resume/<client>_<slug>_resume.html
+```
+
+This drives headless Chrome and preserves the template's `@page` / `@media print` CSS. Report both
+output paths, and mention that `/auto-apply for <client> to <keyword> jobs` can now submit
+applications using this resume.

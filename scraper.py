@@ -15,7 +15,12 @@ COLUMNS = [
     "location",
     "date_posted",
     "salary",
+    "employment_type",
+    "remote",
+    "sponsorship",
+    "easy_apply",
     "job_url",
+    "job_url_direct",
     "description",
 ]
 
@@ -59,7 +64,12 @@ def scrape_jobspy_site(site, keyword, location, results):
             "location": df.get("location"),
             "date_posted": df.get("date_posted"),
             "salary": df.apply(_salary, axis=1),
+            "employment_type": df.get("job_type"),
+            "remote": df.get("is_remote"),
+            "sponsorship": None,
+            "easy_apply": None,
             "job_url": df.get("job_url"),
+            "job_url_direct": df.get("job_url_direct"),
             "description": df.get("description"),
         }
     )
