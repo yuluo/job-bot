@@ -1,28 +1,42 @@
 # Your files go here
 
-**Drop your resume into this folder** — PDF, DOCX, Markdown, or plain text. Any filename works.
+**Step 1 — drop your resume into this folder.** PDF, DOCX, Markdown, or plain text. Any filename
+works.
 
-That's the only manual step. Then run:
+**Step 2 — run `/setup`.** It reads your resume and writes `resume_template.html` — your whole
+career in clean, editable HTML — then fills in what it can of `profile.yaml`.
+
+**Step 3 — check `resume_template.html`.** It opens in your browser automatically. Read it against
+your original: PDFs with columns, tables, or images are where a line most often gets dropped or
+reordered. Fix anything wrong directly in the HTML.
+
+That last step matters more than it sounds. Every tailored resume is built from this file, so a
+correction here is a correction everywhere, and a mistake here follows you into every application.
+
+Then, for each role you're targeting:
 
 ```
-/scrape-jobs data engineer          # collect postings for a role
+/scrape-jobs data engineer
 /build-resume for data engineer positions
 /auto-apply to data engineer jobs
 ```
 
-Repeat for each role you're targeting. Each keyword gets its own folder under `roles/`, with its own
-tailored resume.
-
-## What else lives here
+## What lives here
 
 | File | What it is |
 |---|---|
-| your resume | the source of truth for your name, contact details, and education |
-| `profile.yaml` | generated — the answers nearly every application asks for |
-| `answers.yaml` | generated — questions you've been asked before, so you're not asked twice |
+| your resume | the original you dropped in — read once by `/setup`, then left alone |
+| `resume_template.html` | **the master.** Your full resume, yours to edit. Every tailored resume derives from it |
+| `resume_template.pdf` | a rendered preview of the above, so you can see what it looks like printed |
+| `profile.yaml` | the answers nearly every application asks for |
+| `answers.yaml` | questions you've been asked before, so you're not asked twice |
 
-Both YAML files are created for you by `/auto-apply` on its first run. You can edit them by hand at
-any time; nothing overwrites a value you changed.
+`/setup` never overwrites edits you've made — it asks first if `resume_template.html` already
+exists, and `profile.yaml` values you've corrected by hand are left alone.
+
+`/setup` only fills profile fields your resume actually states — name, contact, location. Work
+authorization, salary expectations, and start date aren't on a resume, so `/auto-apply` asks you for
+those the first time it needs them.
 
 ## A note on what gets committed
 

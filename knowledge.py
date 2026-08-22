@@ -162,6 +162,55 @@ def cmd_init(args):
     print(json.dumps({"created": created, "missing": missing_fields(profile)}, indent=2))
 
 
+def cmd_set(args):
+    if is_blocked(args.field) or is_blocked(args.value):
+        print("refusing to store a prohibited identifier", file=sys.stderr)
+        sys.exit(2)
+
+    if args.field.count(".") != 1:
+        print(f"--field must be section.field, got {args.field!r}", file=sys.stderr)
+        sys.exit(1)
+    section, field = args.field.split(".")
+
+    path = profile_path()
+    profile = load_yaml(path, {})
+    if not profile:
+        print("no profile yet — run `knowledge.py init` first", file=sys.stderr)
+        sys.exit(1)
+
+    # Reject a path the scaffold does not define, so a typo fails loudly instead
+    # of quietly creating a field nothing ever reads.
+    if section not in PROFILE_SCAFFOLD or field not in PROFILE_SCAFFOLD[section]:
+        print(f"unknown profile field {args.field!r}", file=sys.stderr)
+        sys.exit(1)
+
+    profile.setdefault(section, {})
+    current = profile[section].get(field)
+    if current not in (None, "", {}, []) and not args.force:
+        print(
+            json.dumps(
+                {
+                    "skipped": args.field,
+                    "reason": "already set; pass --force to overwrite",
+                    "current": current,
+                },
+                indent=2,
+                default=str,
+            )
+        )
+        return
+
+    profile[section][field] = args.value
+    dump_yaml(path, profile)
+    print(
+        json.dumps(
+            {"set": args.field, "value": args.value, "missing": missing_fields(profile)},
+            indent=2,
+            default=str,
+        )
+    )
+
+
 def cmd_profile(args):
     profile = load_yaml(profile_path(), {})
     print(
@@ -308,6 +357,12 @@ def main():
 
     p = sub.add_parser("profile", help="print the profile and any missing fields")
     p.set_defaults(func=cmd_profile)
+
+    p = sub.add_parser("set", help="set one profile field, e.g. --field identity.email")
+    p.add_argument("--field", required=True, help="dotted path, e.g. identity.full_name")
+    p.add_argument("--value", required=True)
+    p.add_argument("--force", action="store_true", help="overwrite a value that is already set")
+    p.set_defaults(func=cmd_set)
 
     p = sub.add_parser("lookup", help="look up an application question")
     p.add_argument("--question", required=True)

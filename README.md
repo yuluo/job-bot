@@ -7,37 +7,43 @@ A three-step job-hunting pipeline for **one candidate**: scrape postings for a r
 ```mermaid
 flowchart TB
     R["Drop your resume<br/>into candidate/"]
-    R --> S["1. /scrape-jobs data engineer"]
+    R --> SU["0. /setup"]
+    SU --> TPL[/"candidate/resume_template.html<br/>your whole resume, editable"/]
+    SU --> S["1. /scrape-jobs data engineer"]
     S --> B["2. /build-resume for data engineer positions"]
     B --> A["3. /auto-apply to data engineer jobs"]
     A --> LOG[/"applied.csv<br/>one row per attempt"/]
 
     S -. "~300 postings<br/>jobs_*.csv" .-> B
-    R -. "name, contact,<br/>education" .-> B
+    TPL -. "every job, skill,<br/>and date you have" .-> B
     B -. "resume.pdf" .-> A
     KB[/"candidate/<br/>profile.yaml + answers.yaml"/] -. "answers each form,<br/>and learns anything new<br/>you are asked" .-> A
 
     style KB fill:#ddf4ff,stroke:#0969da
+    style TPL fill:#ddf4ff,stroke:#0969da
     style LOG fill:#dafbe1,stroke:#2da44e
     style R fill:#fff8c5,stroke:#bf8700
 ```
 
 | Step | Skill | Script | Reads | Writes |
 |---|---|---|---|---|
+| 0. Set up (once) | `/setup` | `knowledge.py`, `render_pdf.py` | your resume in `candidate/` | `candidate/resume_template.html`, `profile.yaml` |
 | 1. Collect | `/scrape-jobs <keyword>` | `scraper.py`, `dice.py` | Indeed, LinkedIn, Dice | `roles/<slug>/jobs_<timestamp>.csv` |
-| 2. Tailor | `/build-resume for <keyword> positions` | `render_pdf.py` | your resume + that role's CSV | `roles/<slug>/resume.{html,pdf}` |
+| 2. Tailor | `/build-resume for <keyword> positions` | `render_pdf.py` | your template + that role's CSV | `roles/<slug>/resume.{html,pdf}` |
 | 3. Apply | `/auto-apply to <keyword> jobs` | `apply.py`, `knowledge.py` | the resume + `candidate/` | `applied.csv` |
 
 Two things are worth noticing in the diagram:
 
-- **The scrape feeds the resume.** Step 2 doesn't just reformat your CV — it mines the postings collected in step 1 for the tools and phrasing that role actually asks for, then re-emphasizes and reorders your existing experience toward them. That's why one resume per keyword, and why scraping comes first.
+- **`/setup` turns your resume into something editable.** It transcribes your PDF into `candidate/resume_template.html` — every job, bullet, skill, and date, in clean HTML. Fix anything it got wrong once, and every resume built afterward inherits the fix.
+- **The scrape feeds the resume.** Step 2 doesn't just reformat your CV — it mines the postings collected in step 1 for the tools and phrasing that role actually asks for, then re-emphasizes and reorders your existing experience toward them. Your employers, titles, and dates never change; only emphasis does. That's why one resume per keyword, and why scraping comes first.
 - **`candidate/` is shared across every role.** Your identity and your accumulated answers live once. Each new role reuses everything you've already been asked, so the third role you target is much quieter than the first.
 
 ## Getting started
 
 1. Fork this repo.
 2. Drop your resume into `candidate/` — PDF, DOCX, Markdown, or text.
-3. Run the pipeline for each role you're targeting:
+3. Run `/setup` once. It builds the venv, transcribes your resume into an editable HTML template, and pre-fills what it can of your profile.
+4. Then run the pipeline for each role you're targeting:
 
 ```
 /scrape-jobs data engineer
@@ -48,7 +54,7 @@ Two things are worth noticing in the diagram:
 ## Layout
 
 ```
-candidate/          your resume, profile.yaml, answers.yaml
+candidate/          your resume, resume_template.html, profile.yaml, answers.yaml
 roles/<slug>/       jobs_*.csv, resume.html, resume.pdf, batch_*.json
 applied.csv         global ledger of every application attempt
 template/           resume layout + experience content

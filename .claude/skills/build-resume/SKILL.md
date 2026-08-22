@@ -1,14 +1,19 @@
 ---
 name: build-resume
-description: Build a tailored, print-friendly HTML resume for the candidate by combining their personal info + education with the template's job experience, customized for a target job type using the scraped job data for that keyword. Use when the user wants to generate a resume for a target role.
+description: Build a tailored, print-friendly HTML resume for the candidate by re-emphasizing their own experience toward a target job type, using the scraped job data for that keyword. Requires /setup to have generated candidate/resume_template.html first. Use when the user wants to generate a resume for a target role.
 argument-hint: for <job keyword> positions
 ---
 
 Build a tailored, PDF-print-friendly HTML resume for the candidate and a target job type.
 
-This repo holds **one candidate**. Their resume in `candidate/` supplies **identity and education
-only**. The **layout, job experience, and skills come from `template/resume_template.html`**, then
-get tailored toward the target role using that role's scraped job data.
+This repo holds **one candidate**. All content — identity, skills, experience, education — comes
+from **`candidate/resume_template.html`**, the editable master that `/setup` transcribed from their
+real resume and that they may have hand-edited since. This skill re-emphasizes that content toward
+the target role using that role's scraped job data.
+
+`template/resume_template.html` is a **layout donor only** — its CSS is already carried in the
+candidate's template. Never take experience, skills, or company names from it; that file describes
+someone else's career.
 
 One resume per keyword: everything for a keyword lives in `roles/<slug>/`.
 
@@ -19,10 +24,9 @@ The arguments look like: `for <job keyword> positions`.
 - **Target keyword**: the text after `for`, with a trailing `positions` / `jobs` / `roles` removed
   (e.g. `power bi`). Normalize to a **slug**: lowercase, runs of non-alphanumeric characters → a
   single hyphen (`power bi` → `power-bi`, `data engineer` → `data-engineer`).
-- **Source resume**: the first `pdf` / `docx` / `md` / `txt` file in `candidate/`, ignoring
-  `profile.yaml`, `answers.yaml`, and `README.md`. If `candidate/` holds no such file, stop and tell
-  the user to drop their resume into `candidate/`. If it holds more than one, list them and ask
-  which to use.
+**Precondition**: `candidate/resume_template.html` must exist. If it doesn't, stop and tell the
+user to run `/setup` first. Do not fall back to `template/resume_template.html` — that would quietly
+put a stranger's experience on the candidate's resume.
 
 ## Step 2 — Locate the scraped job data
 
@@ -32,10 +36,9 @@ and ask the user to either pick one or scrape first with `/scrape-jobs <keyword>
 
 ## Step 3 — Read the inputs
 
-- **Candidate resume** (use Read for pdf/text): extract only the candidate's **name**, **location /
-  contact info** (email, phone, city), and the **full education section**. Ignore their job history.
-- **`template/resume_template.html`**: this is the source of the layout/CSS and the experience +
-  skills content you will reuse.
+**`candidate/resume_template.html`** is the single source: layout, CSS, identity, skills, every job
+with its bullets, and education. Read it in full — there is no second input to reconcile, and the
+raw resume PDF is not read at this stage.
 
 ## Step 4 — Mine the job data for tailoring
 
@@ -46,23 +49,27 @@ keywords** for the role. Produce a short ranked keyword list to guide the tailor
 
 ## Step 5 — Generate the resume HTML
 
-Clone the template's structure and CSS, then fill it in:
+Start from the candidate's template and adjust emphasis — the structure, CSS, and facts carry over
+unchanged:
 
-- **Header**: replace the `[ NAME ]`, `[ LOCATION ]`, `[ CONTACT ]` placeholders with the candidate's
-  real name, location, and contact. Remove the dashed `placeholder` styling for these real values.
-- **Skills**: start from the template's skills, then **reorder and emphasize** to foreground the
-  keywords mined in Step 4. Only surface skills genuinely present in the template — this is
-  emphasis and ordering, not fabrication.
-- **Experience**: keep the template's job entries and dates, but **reword and reorder the bullets**
-  to mirror the target role's language and priorities from Step 4. Company names may stay as the
-  anonymized `[ Company A ]` / `[ Company B ]` placeholders.
-- **Education**: replace the template's `[ University ]` block with the candidate's real education from
-  Step 3.
+- **Header**: keep the candidate's name, location, and contact exactly as they are.
+- **Skills**: **reorder and emphasize** to foreground the keywords mined in Step 4. Only skills the
+  candidate already lists — this is ordering and emphasis, not addition.
+- **Experience**: keep **every job**, with its company, title, location, and dates exactly as
+  written. Reword and reorder the **bullets** to mirror the target role's language and priorities
+  from Step 4. A bullet may be rephrased or moved; it may not be invented, and a job may not be
+  dropped.
+- **Education**: carry over unchanged.
 - Preserve all print CSS — `@page`, `@media print`, `break-inside: avoid`, and the serif styling.
 
-**Tailoring guardrail**: tailoring means re-emphasis, reordering, and rephrasing toward the target
-role's vocabulary. Never invent experience, skills, or credentials the candidate or template don't
-support.
+**Tailoring guardrail**: this is the candidate's real career. Tailoring means re-emphasis,
+reordering, and rephrasing toward the target role's vocabulary. Never add a skill, employer, title,
+date, or credential their template doesn't contain, and never soften a date range to fit a job
+description. If the role wants something they don't have, the honest answer is that the resume
+doesn't show it.
+
+**Never** carry `[ Company A ]`, `[ Company B ]`, `[ University ]`, or any content from
+`template/resume_template.html` into the output. Their presence means the wrong source was read.
 
 ## Step 6 — Write the output and report
 
@@ -76,5 +83,5 @@ Then render the print-ready PDF alongside it:
 ```
 
 This drives headless Chrome and preserves the template's `@page` / `@media print` CSS. Report both
-output paths, and mention that `/auto-apply to <keyword> jobs` can now submit applications using
-this resume.
+output paths, summarize what you re-emphasized and why, and mention that `/auto-apply to <keyword>
+jobs` can now submit applications using this resume.
