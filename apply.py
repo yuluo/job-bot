@@ -10,12 +10,11 @@ import urllib.parse
 
 import pandas as pd
 
-APPLICATIONS_DIR = "applications"
-LEDGER = os.path.join(APPLICATIONS_DIR, "applied.csv")
+ROLES_DIR = "roles"
+LEDGER = "applied.csv"
 
 LEDGER_COLUMNS = [
     "applied_at",
-    "client",
     "keyword",
     "site",
     "channel",
@@ -62,8 +61,12 @@ def truthy(value):
     return str(value).strip().lower() in {"true", "1", "yes", "y"}
 
 
+def role_dir(slug):
+    return os.path.join(ROLES_DIR, slug)
+
+
 def newest_csv(slug):
-    matches = sorted(glob.glob(os.path.join("output", f"jobs_{slug}_*.csv")))
+    matches = glob.glob(os.path.join(role_dir(slug), "jobs_*.csv"))
     if not matches:
         return None
     return max(matches, key=lambda p: re.search(r"_(\d{8}-\d{6})\.csv$", p).group(1))
@@ -121,7 +124,6 @@ def read_ledger():
 
 
 def append_ledger(entries):
-    os.makedirs(APPLICATIONS_DIR, exist_ok=True)
     exists = os.path.exists(LEDGER)
     with open(LEDGER, "a", newline="", encoding="utf-8") as fh:
         writer = csv.DictWriter(fh, fieldnames=LEDGER_COLUMNS)
@@ -131,8 +133,8 @@ def append_ledger(entries):
             writer.writerow({k: entry.get(k, "") for k in LEDGER_COLUMNS})
 
 
-def load_profile(client):
-    path = os.path.join("clients", f"{client}.profile.yaml")
+def load_profile():
+    path = os.path.join("candidate", "profile.yaml")
     if not os.path.exists(path):
         return {}
     import yaml
@@ -161,7 +163,6 @@ def main():
         description="Build an application shortlist from a scraped job CSV"
     )
     parser.add_argument("slug", help="keyword slug, e.g. 'devops-engineer'")
-    parser.add_argument("--client", required=True, help="client name")
     parser.add_argument("--channels", default=",".join(CHANNELS))
     parser.add_argument("--limit-per-channel", type=int, default=10)
     parser.add_argument("--location", default=None)
@@ -174,12 +175,15 @@ def main():
     path = args.csv or newest_csv(slug)
     if not path:
         available = sorted(
-            {
-                re.sub(r"^jobs_|_\d{8}-\d{6}\.csv$", "", os.path.basename(p))
-                for p in glob.glob("output/jobs_*.csv")
-            }
+            os.path.basename(d)
+            for d in glob.glob(os.path.join(ROLES_DIR, "*"))
+            if glob.glob(os.path.join(d, "jobs_*.csv"))
         )
-        print(f"No CSV for slug {slug!r}. Available: {', '.join(available) or 'none'}", file=sys.stderr)
+        print(
+            f"No scrape for role {slug!r}. Available: {', '.join(available) or 'none'}. "
+            f"Run /scrape-jobs {slug.replace('-', ' ')} first.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     df = pd.read_csv(path)
@@ -187,7 +191,7 @@ def main():
         if column not in df.columns:
             df[column] = None
 
-    profile = load_profile(args.client)
+    profile = load_profile()
     skills = list((profile.get("experience") or {}).get("years_by_skill") or {})
     needs_sponsorship = bool((profile.get("authorization") or {}).get("requires_sponsorship"))
 
@@ -254,12 +258,11 @@ def main():
         batch.extend(ranked[: args.limit_per_channel])
 
     stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    os.makedirs(APPLICATIONS_DIR, exist_ok=True)
-    out_path = args.out or os.path.join(APPLICATIONS_DIR, f"batch_{slug}_{stamp}.json")
+    os.makedirs(role_dir(slug), exist_ok=True)
+    out_path = args.out or os.path.join(role_dir(slug), f"batch_{stamp}.json")
     with open(out_path, "w", encoding="utf-8") as fh:
         json.dump(
             {
-                "client": args.client,
                 "keyword_slug": slug,
                 "source_csv": path,
                 "created_at": stamp,

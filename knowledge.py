@@ -7,7 +7,7 @@ import sys
 
 import yaml
 
-CLIENTS_DIR = "clients"
+CANDIDATE_DIR = "candidate"
 
 MATCH_THRESHOLD = 0.75
 
@@ -85,12 +85,19 @@ STOPWORDS = {
 }
 
 
-def profile_path(client):
-    return os.path.join(CLIENTS_DIR, f"{client}.profile.yaml")
+def profile_path():
+    return os.path.join(CANDIDATE_DIR, "profile.yaml")
 
 
-def answers_path(client):
-    return os.path.join(CLIENTS_DIR, f"{client}.answers.yaml")
+def answers_path():
+    return os.path.join(CANDIDATE_DIR, "answers.yaml")
+
+
+def in_scope(entry, role):
+    """A per_role entry only applies to the role it was recorded under."""
+    if entry.get("scope") != "per_role":
+        return True
+    return entry.get("role") == role
 
 
 def is_blocked(question):
@@ -143,7 +150,7 @@ def missing_fields(profile):
 
 
 def cmd_init(args):
-    ppath, apath = profile_path(args.client), answers_path(args.client)
+    ppath, apath = profile_path(), answers_path()
     created = []
     if not os.path.exists(ppath):
         dump_yaml(ppath, PROFILE_SCAFFOLD)
@@ -156,11 +163,11 @@ def cmd_init(args):
 
 
 def cmd_profile(args):
-    profile = load_yaml(profile_path(args.client), {})
+    profile = load_yaml(profile_path(), {})
     print(
         json.dumps(
             {
-                "exists": os.path.exists(profile_path(args.client)),
+                "exists": os.path.exists(profile_path()),
                 "profile": profile,
                 "missing": missing_fields(profile),
             },
@@ -185,7 +192,7 @@ def cmd_lookup(args):
         )
         return
 
-    entries = load_yaml(answers_path(args.client), [])
+    entries = [e for e in load_yaml(answers_path(), []) if in_scope(e, args.role)]
     target = normalize(args.question, args.company)
     key = slug_key(args.question, args.company)
 
@@ -210,6 +217,7 @@ def cmd_lookup(args):
                     "answer": best.get("answer"),
                     "answer_type": best.get("answer_type"),
                     "scope": scope,
+                    "role": best.get("role"),
                     "matched_on": how,
                     "confidence": round(best_score, 3),
                     "reuse_count": best.get("reuse_count", 0),
@@ -242,12 +250,14 @@ def cmd_record(args):
         print("refusing to store a prohibited identifier", file=sys.stderr)
         sys.exit(2)
 
-    path = answers_path(args.client)
+    path = answers_path()
     entries = load_yaml(path, [])
     key = args.key or slug_key(args.question, args.company)
 
+    # Only update an entry that actually applies to this role — otherwise the same
+    # question asked under two roles would overwrite one role's answer with the other's.
     for entry in entries:
-        if entry.get("key") == key:
+        if entry.get("key") == key and in_scope(entry, args.role):
             variants = list(entry.get("variants") or [])
             if args.question != entry.get("question") and args.question not in variants:
                 variants.append(args.question)
@@ -258,28 +268,29 @@ def cmd_record(args):
             print(json.dumps({"updated": key, "reuse_count": entry["reuse_count"]}, indent=2))
             return
 
-    entries.append(
-        {
-            "key": key,
-            "question": args.question,
-            "answer_type": args.type,
-            "answer": args.answer,
-            "variants": [],
-            "scope": args.scope,
-            "asked_at": args.asked_at or datetime.date.today().isoformat(),
-            "first_seen": {"company": args.company, "job_url": args.job_url},
-            "reuse_count": 1,
-        }
-    )
+    entry = {
+        "key": key,
+        "question": args.question,
+        "answer_type": args.type,
+        "answer": args.answer,
+        "variants": [],
+        "scope": args.scope,
+        "asked_at": args.asked_at or datetime.date.today().isoformat(),
+        "first_seen": {"company": args.company, "job_url": args.job_url},
+        "reuse_count": 1,
+    }
+    if args.scope == "per_role":
+        entry["role"] = args.role
+    entries.append(entry)
     dump_yaml(path, entries)
-    print(json.dumps({"created": key, "total_entries": len(entries)}, indent=2))
+    print(json.dumps({"created": key, "scope": args.scope, "role": entry.get("role"), "total_entries": len(entries)}, indent=2))
 
 
 def cmd_bump(args):
-    path = answers_path(args.client)
+    path = answers_path()
     entries = load_yaml(path, [])
     for entry in entries:
-        if entry.get("key") == args.key:
+        if entry.get("key") == args.key and in_scope(entry, args.role):
             entry["reuse_count"] = entry.get("reuse_count", 0) + 1
             dump_yaml(path, entries)
             print(json.dumps({"key": args.key, "reuse_count": entry["reuse_count"]}, indent=2))
@@ -293,23 +304,21 @@ def main():
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("init", help="create profile + answers scaffolding")
-    p.add_argument("client")
     p.set_defaults(func=cmd_init)
 
     p = sub.add_parser("profile", help="print the profile and any missing fields")
-    p.add_argument("client")
     p.set_defaults(func=cmd_profile)
 
     p = sub.add_parser("lookup", help="look up an application question")
-    p.add_argument("client")
     p.add_argument("--question", required=True)
+    p.add_argument("--role", required=True, help="keyword slug, e.g. 'data-engineer'")
     p.add_argument("--company", default=None)
     p.set_defaults(func=cmd_lookup)
 
     p = sub.add_parser("record", help="store an answer the user supplied")
-    p.add_argument("client")
     p.add_argument("--question", required=True)
     p.add_argument("--answer", required=True)
+    p.add_argument("--role", required=True, help="keyword slug, e.g. 'data-engineer'")
     p.add_argument("--scope", default="global", choices=["global", "per_role", "per_company"])
     p.add_argument("--type", default="freetext", choices=["freetext", "choice", "boolean", "number", "date"])
     p.add_argument("--company", default=None)
@@ -319,8 +328,8 @@ def main():
     p.set_defaults(func=cmd_record)
 
     p = sub.add_parser("bump", help="increment reuse_count after a reuse")
-    p.add_argument("client")
     p.add_argument("--key", required=True)
+    p.add_argument("--role", required=True, help="keyword slug, e.g. 'data-engineer'")
     p.set_defaults(func=cmd_bump)
 
     args = parser.parse_args()

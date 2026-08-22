@@ -121,8 +121,9 @@ def main():
     else:
         slug = re.sub(r"[^a-z0-9]+", "-", args.keyword.lower()).strip("-")
         stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        os.makedirs("output", exist_ok=True)
-        out_path = os.path.join("output", f"jobs_{slug}_{stamp}.csv")
+        role_dir = os.path.join("roles", slug)
+        os.makedirs(role_dir, exist_ok=True)
+        out_path = os.path.join(role_dir, f"jobs_{stamp}.csv")
     combined.to_csv(out_path, index=False)
 
     summary = ", ".join(f"{site}: {n}" for site, n in counts.items())

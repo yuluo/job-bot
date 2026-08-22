@@ -1,36 +1,38 @@
 ---
 name: build-resume
-description: Build a tailored, print-friendly HTML resume for a client by combining their personal info + education with the template's job experience, customized for a target job type using scraped job data in output/. Use when the user wants to generate a resume for a client and target role.
-argument-hint: based off <client>.resume for <job keyword> positions
+description: Build a tailored, print-friendly HTML resume for the candidate by combining their personal info + education with the template's job experience, customized for a target job type using the scraped job data for that keyword. Use when the user wants to generate a resume for a target role.
+argument-hint: for <job keyword> positions
 ---
 
-Build a tailored, PDF-print-friendly HTML resume for a client and a target job type.
+Build a tailored, PDF-print-friendly HTML resume for the candidate and a target job type.
 
-The client's resume supplies **identity and education only**. The **layout, job experience, and
-skills come from `template/resume_template.html`**, then get tailored toward the target role using
-the scraped job data in `output/`.
+This repo holds **one candidate**. Their resume in `candidate/` supplies **identity and education
+only**. The **layout, job experience, and skills come from `template/resume_template.html`**, then
+get tailored toward the target role using that role's scraped job data.
+
+One resume per keyword: everything for a keyword lives in `roles/<slug>/`.
 
 ## Step 1 — Parse arguments
 
-The arguments look like: `based off <client>.resume for <job keyword> positions`.
+The arguments look like: `for <job keyword> positions`.
 
-- **Client**: the text after `based off` and before `for`. Strip a trailing `.resume`, then resolve
-  to a file in `clients/` by basename, trying extensions `pdf`, `txt`, `md`, `docx` (e.g. `tom` →
-  `clients/tom.pdf`). If `clients/` is missing or no match is found, list `clients/` and ask the
-  user which file to use.
 - **Target keyword**: the text after `for`, with a trailing `positions` / `jobs` / `roles` removed
   (e.g. `power bi`). Normalize to a **slug**: lowercase, runs of non-alphanumeric characters → a
   single hyphen (`power bi` → `power-bi`, `data engineer` → `data-engineer`).
+- **Source resume**: the first `pdf` / `docx` / `md` / `txt` file in `candidate/`, ignoring
+  `profile.yaml`, `answers.yaml`, and `README.md`. If `candidate/` holds no such file, stop and tell
+  the user to drop their resume into `candidate/`. If it holds more than one, list them and ask
+  which to use.
 
 ## Step 2 — Locate the scraped job data
 
-Find `output/jobs_<slug>_*.csv`. If several match, pick the **newest** by the `YYYYMMDD-HHMMSS`
-timestamp in the filename. If none match, list the available slugs in `output/` and ask the user to
-either pick one or scrape first with `/scrape-jobs <keyword>`.
+Find `roles/<slug>/jobs_*.csv`. If several match, pick the **newest** by the `YYYYMMDD-HHMMSS`
+timestamp in the filename. If the folder or file is missing, list the available roles under `roles/`
+and ask the user to either pick one or scrape first with `/scrape-jobs <keyword>`.
 
 ## Step 3 — Read the inputs
 
-- **Client resume** (use Read for pdf/text): extract only the client's **name**, **location /
+- **Candidate resume** (use Read for pdf/text): extract only the candidate's **name**, **location /
   contact info** (email, phone, city), and the **full education section**. Ignore their job history.
 - **`template/resume_template.html`**: this is the source of the layout/CSS and the experience +
   skills content you will reuse.
@@ -46,7 +48,7 @@ keywords** for the role. Produce a short ranked keyword list to guide the tailor
 
 Clone the template's structure and CSS, then fill it in:
 
-- **Header**: replace the `[ NAME ]`, `[ LOCATION ]`, `[ CONTACT ]` placeholders with the client's
+- **Header**: replace the `[ NAME ]`, `[ LOCATION ]`, `[ CONTACT ]` placeholders with the candidate's
   real name, location, and contact. Remove the dashed `placeholder` styling for these real values.
 - **Skills**: start from the template's skills, then **reorder and emphasize** to foreground the
   keywords mined in Step 4. Only surface skills genuinely present in the template — this is
@@ -54,25 +56,25 @@ Clone the template's structure and CSS, then fill it in:
 - **Experience**: keep the template's job entries and dates, but **reword and reorder the bullets**
   to mirror the target role's language and priorities from Step 4. Company names may stay as the
   anonymized `[ Company A ]` / `[ Company B ]` placeholders.
-- **Education**: replace the template's `[ University ]` block with the client's real education from
+- **Education**: replace the template's `[ University ]` block with the candidate's real education from
   Step 3.
 - Preserve all print CSS — `@page`, `@media print`, `break-inside: avoid`, and the serif styling.
 
 **Tailoring guardrail**: tailoring means re-emphasis, reordering, and rephrasing toward the target
-role's vocabulary. Never invent experience, skills, or credentials the client or template don't
+role's vocabulary. Never invent experience, skills, or credentials the candidate or template don't
 support.
 
 ## Step 6 — Write the output and report
 
-Create the `resume/` folder if needed and write the file to
-`resume/<client>_<slug>_resume.html` (e.g. `resume/tom_power-bi_resume.html`).
+Write the file to `roles/<slug>/resume.html` (e.g. `roles/power-bi/resume.html`), creating the
+folder if needed.
 
 Then render the print-ready PDF alongside it:
 
 ```bash
-.venv/bin/python render_pdf.py resume/<client>_<slug>_resume.html
+.venv/bin/python render_pdf.py roles/<slug>/resume.html
 ```
 
 This drives headless Chrome and preserves the template's `@page` / `@media print` CSS. Report both
-output paths, and mention that `/auto-apply for <client> to <keyword> jobs` can now submit
-applications using this resume.
+output paths, and mention that `/auto-apply to <keyword> jobs` can now submit applications using
+this resume.

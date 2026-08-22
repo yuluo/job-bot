@@ -1,6 +1,6 @@
 ---
 name: scrape-jobs
-description: Scrape ~100 job postings each from Indeed, LinkedIn, and Dice for a keyword and export to a CSV in output/. Use when the user wants to collect job postings for a search term.
+description: Scrape ~100 job postings each from Indeed, LinkedIn, and Dice for a keyword and export to a CSV in roles/<slug>/. Use when the user wants to collect job postings for a search term.
 argument-hint: <keyword> [location] [results]
 ---
 
@@ -31,7 +31,7 @@ Run the job scraper for the keyword given in the skill arguments and report the 
 The script's final line has the summary:
 
 ```
-indeed: N, linkedin: N, dice: N -> output/jobs_<slug>_<timestamp>.csv (M rows)
+indeed: N, linkedin: N, dice: N -> roles/<slug>/jobs_<timestamp>.csv (M rows)
 ```
 
 When the run finishes, report the per-site counts and the CSV path. If a site failed or returned fewer results (LinkedIn rate-limits around 100 results per IP), relay its stderr message and note that the rest of the run still succeeded — per-site failures are tolerated by design. Do not analyze the CSV contents unless the user asks.

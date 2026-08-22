@@ -1,12 +1,12 @@
 # The candidate knowledge base
 
-Two YAML files per client, both under `clients/` (gitignored — they hold personal data). Managed by
-`knowledge.py`, but plain enough that the user can hand-edit them between runs. The skill re-reads
-them each run and never overwrites a value the user changed by hand.
+Two YAML files under `candidate/` — this repo holds one candidate. Managed by `knowledge.py`, but
+plain enough that the user can hand-edit them between runs. The skill re-reads them each run and
+never overwrites a value the user changed by hand.
 
-## `clients/<client>.profile.yaml`
+## `candidate/profile.yaml`
 
-Created by `knowledge.py init <client>`. The fields nearly every application asks for.
+Created by `knowledge.py init`. The fields nearly every application asks for.
 
 ```yaml
 identity:
@@ -44,9 +44,9 @@ defaults:
 `years_by_skill` does double duty: it answers "how many years of X" questions, and `apply.py` uses
 its keys to rank the shortlist by description overlap.
 
-`knowledge.py profile <client>` prints the profile plus a `missing` list of required fields.
+`knowledge.py profile` prints the profile plus a `missing` list of required fields.
 
-## `clients/<client>.answers.yaml`
+## `candidate/answers.yaml`
 
 The learned Q&A bank. Starts empty and grows every run — this is why the skill gets quieter the more
 it is used.
@@ -58,7 +58,7 @@ it is used.
   answer: "5"
   variants:
     - Years of Kubernetes experience?
-  scope: global
+  scope: global          # global | per_role | per_company
   asked_at: "2026-08-21"
   first_seen: { company: Acme, job_url: "https://..." }
   reuse_count: 7
@@ -68,9 +68,14 @@ it is used.
 
 | scope | meaning | reuse behavior |
 |---|---|---|
-| `global` | a fact that doesn't change | replayed verbatim |
-| `per_role` | tied to the keyword slug | reused within the same role |
+| `global` | a fact that doesn't change | replayed verbatim under any role |
+| `per_role` | tied to one keyword | **enforced in code** — carries a `role:` field and is invisible to `lookup` under any other role |
 | `per_company` | names or flatters the employer | **template only** — must be rewritten per employer and shown to the user before submitting |
+
+`per_role` entries are filtered out of the match loop entirely when the role doesn't match, so they
+cannot even surface as `nearest`. Two roles can therefore hold different answers to the same
+question without colliding — recording "Which BI tool do you prefer?" under `power-bi` and
+`data-engineer` produces two independent entries.
 
 A `per_company` answer replayed verbatim to a different company is the worst failure this skill can
 produce, and it fails silently. `knowledge.py lookup` returns `requires_personalization: true` for
@@ -78,9 +83,12 @@ these; honor it.
 
 ## Matching
 
-`knowledge.py lookup <client> --question "..." [--company "..."]` resolves in this order: exact
-`key` → stored `question` → `variants` → normalized token-overlap similarity. Normalization
-lowercases, strips punctuation, drops the company name and generic filler words.
+`knowledge.py lookup --role <slug> --question "..." [--company "..."]` resolves in this order: exact
+`key` → stored `question` → `variants` → normalized token-overlap similarity, over the entries in
+scope for `--role`. Normalization lowercases, strips punctuation, drops the company name and generic
+filler words.
+
+`--role` is required on `lookup`, `record`, and `bump`.
 
 Auto-accept threshold is **0.75 Jaccard**. It is deliberately strict: "years of experience with
 Terraform" scores 0.5 against the Kubernetes entry above and correctly does **not** match. A wrong
