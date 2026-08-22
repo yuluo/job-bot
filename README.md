@@ -7,15 +7,15 @@ A three-step job-hunting pipeline for **one candidate**: scrape postings for a r
 ```mermaid
 flowchart TB
     R["Drop your resume<br/>into candidate/"]
-    R --> S["1 &nbsp; /scrape-jobs data engineer"]
-    S --> B["2 &nbsp; /build-resume for data engineer positions"]
-    B --> A["3 &nbsp; /auto-apply to data engineer jobs"]
-    A --> LOG[/"applied.csv &nbsp;·&nbsp; one row per attempt"/]
+    R --> S["1. /scrape-jobs data engineer"]
+    S --> B["2. /build-resume for data engineer positions"]
+    B --> A["3. /auto-apply to data engineer jobs"]
+    A --> LOG[/"applied.csv<br/>one row per attempt"/]
 
     S -. "~300 postings<br/>jobs_*.csv" .-> B
     R -. "name, contact,<br/>education" .-> B
     B -. "resume.pdf" .-> A
-    KB[/"candidate/<br/>profile.yaml + answers.yaml"/] <-. "asks you once,<br/>remembers for every<br/>later role" .-> A
+    KB[/"candidate/<br/>profile.yaml + answers.yaml"/] -. "answers each form,<br/>and learns anything new<br/>you are asked" .-> A
 
     style KB fill:#ddf4ff,stroke:#0969da
     style LOG fill:#dafbe1,stroke:#2da44e
