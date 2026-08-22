@@ -2,6 +2,37 @@
 
 A three-step job-hunting pipeline for **one candidate**: scrape postings for a role, build a resume tailored to what those postings actually ask for, then apply to them.
 
+## The process
+
+```mermaid
+flowchart TB
+    R["Drop your resume<br/>into candidate/"]
+    R --> S["1 &nbsp; /scrape-jobs data engineer"]
+    S --> B["2 &nbsp; /build-resume for data engineer positions"]
+    B --> A["3 &nbsp; /auto-apply to data engineer jobs"]
+    A --> LOG[/"applied.csv &nbsp;·&nbsp; one row per attempt"/]
+
+    S -. "~300 postings<br/>jobs_*.csv" .-> B
+    R -. "name, contact,<br/>education" .-> B
+    B -. "resume.pdf" .-> A
+    KB[/"candidate/<br/>profile.yaml + answers.yaml"/] <-. "asks you once,<br/>remembers for every<br/>later role" .-> A
+
+    style KB fill:#ddf4ff,stroke:#0969da
+    style LOG fill:#dafbe1,stroke:#2da44e
+    style R fill:#fff8c5,stroke:#bf8700
+```
+
+| Step | Skill | Script | Reads | Writes |
+|---|---|---|---|---|
+| 1. Collect | `/scrape-jobs <keyword>` | `scraper.py`, `dice.py` | Indeed, LinkedIn, Dice | `roles/<slug>/jobs_<timestamp>.csv` |
+| 2. Tailor | `/build-resume for <keyword> positions` | `render_pdf.py` | your resume + that role's CSV | `roles/<slug>/resume.{html,pdf}` |
+| 3. Apply | `/auto-apply to <keyword> jobs` | `apply.py`, `knowledge.py` | the resume + `candidate/` | `applied.csv` |
+
+Two things are worth noticing in the diagram:
+
+- **The scrape feeds the resume.** Step 2 doesn't just reformat your CV — it mines the postings collected in step 1 for the tools and phrasing that role actually asks for, then re-emphasizes and reorders your existing experience toward them. That's why one resume per keyword, and why scraping comes first.
+- **`candidate/` is shared across every role.** Your identity and your accumulated answers live once. Each new role reuses everything you've already been asked, so the third role you target is much quieter than the first.
+
 ## Getting started
 
 1. Fork this repo.
@@ -13,14 +44,6 @@ A three-step job-hunting pipeline for **one candidate**: scrape postings for a r
 /build-resume for data engineer positions
 /auto-apply to data engineer jobs
 ```
-
-| Step | Skill | Script | Output |
-|---|---|---|---|
-| 1. Collect | `/scrape-jobs <keyword>` | `scraper.py` | `roles/<slug>/jobs_<timestamp>.csv` |
-| 2. Tailor | `/build-resume for <keyword> positions` | `render_pdf.py` | `roles/<slug>/resume.{html,pdf}` |
-| 3. Apply | `/auto-apply to <keyword> jobs` | `apply.py`, `knowledge.py` | `applied.csv` |
-
-**One resume per keyword.** Everything for a role lives together in `roles/<slug>/`; the candidate's identity and accumulated application answers live once in `candidate/`.
 
 ## Layout
 
@@ -61,15 +84,80 @@ A failure on one site does not abort the run — the script collects what succee
 
 ## Applying (`apply.py`, `knowledge.py`)
 
-`apply.py` turns a scraped CSV into a shortlist, classifying each posting into a channel:
+### How a posting gets routed
 
-- **`ats`** — `job_url_direct` points at a known applicant tracking system (Greenhouse, Lever, Ashby, Workable, Breezy, …). Most reliable, no board ToS issue.
-- **`dice`** — Dice Easy Apply, confirmed by the API's `easyApply` flag.
-- **`linkedin`** / **`indeed`** — best-effort; both detect automation and often bail to `needs_human`.
+`apply.py` turns a scraped CSV into a shortlist, classifying each posting into an application channel. Not every posting is worth attempting, and the ones that are differ a lot in how reliably they can be filled:
 
-It dedupes against the global `applied.csv` ledger by URL and by normalized company+title. The ledger is global on purpose: the same posting found under two different keywords never produces two applications.
+```mermaid
+flowchart LR
+    JOB["scraped<br/>posting"] --> DUP{"already in<br/>applied.csv?"}
+    DUP -->|yes| DROP["dropped"]
+    DUP -->|no| D{"job_url_direct on a<br/>known ATS host?"}
 
-`knowledge.py` maintains the candidate knowledge base under `candidate/`: a structured `profile.yaml` and an append-only `answers.yaml` Q&A bank. When an application asks something the profile can't answer, the skill asks once and records it, so later applications answer it automatically. Answers are scoped — `global` ones apply everywhere, `per_role` ones are visible only under the keyword they were recorded for, and `per_company` ones must be rewritten per employer. It refuses to store or enter SSNs, government IDs, bank details, or passwords.
+    D -->|yes| ATS["ats<br/>Greenhouse, Lever, Ashby,<br/>Workable, Breezy"]
+    D -->|no| SITE{"which board?"}
+
+    SITE -->|"Dice, easyApply"| DICE["dice"]
+    SITE -->|"Dice, no easy apply"| DROP
+    SITE -->|LinkedIn| LI["linkedin"]
+    SITE -->|Indeed| IN["indeed"]
+
+    ATS --> R1["most reliable<br/>no board ToS issue"]
+    DICE --> R2["reliable"]
+    LI --> R3["best effort"]
+    IN --> R3
+
+    style ATS fill:#dafbe1,stroke:#2da44e
+    style DICE fill:#dafbe1,stroke:#2da44e
+    style LI fill:#fff8c5,stroke:#bf8700
+    style IN fill:#fff8c5,stroke:#bf8700
+    style DROP fill:#ffebe9,stroke:#cf222e
+```
+
+Channels are attempted in that order — `ats` first, `indeed` last — so the most reliable applications go out before any risk of a board throttling the session.
+
+Dedupe runs against the **global** `applied.csv` by URL and by normalized company+title. Global on purpose: the same posting found under two different keywords never produces two applications, and the same role scraped from two boards is caught as one.
+
+### What happens for each job
+
+```mermaid
+flowchart LR
+    OPEN["Open the<br/>application form"] --> BAIL{"Blocked?"}
+    BAIL -->|"captcha, login wall, assessment,<br/>or a request for SSN / ID / bank details"| NH["needs_human<br/>the URL comes back to you"]
+    BAIL -->|no| FILL["Fill every field<br/>see resolution order below"]
+    FILL --> GATE{"First job in<br/>this channel?"}
+    GATE -->|yes| DRY["Screenshot the filled form<br/>plus a field / value / source table.<br/>Wait for your approval."]
+    DRY --> SUB["Submit"]
+    GATE -->|no| SUB
+    SUB --> LOG["Append the outcome<br/>to applied.csv"]
+
+    style NH fill:#ffebe9,stroke:#cf222e
+    style DRY fill:#ddf4ff,stroke:#0969da
+    style SUB fill:#dafbe1,stroke:#2da44e
+```
+
+And this is how any one field gets answered — the cascade that makes the knowledge base pay off:
+
+```mermaid
+flowchart LR
+    Q["a form field"] --> P{"in profile.yaml?"}
+    P -->|yes| F["filled"]
+    P -->|no| AB{"in answers.yaml,<br/>in scope for this role?"}
+    AB -->|"yes — global or per_role"| F
+    AB -->|"yes — per_company"| RW["rewrite for<br/>this employer,<br/>show you the text"] --> F
+    AB -->|"no match at or above 0.75"| ASK["pause the run,<br/>ask you"] --> REC["record it, so it is<br/>never asked again"] --> F
+
+    style ASK fill:#fff8c5,stroke:#bf8700
+    style F fill:#dafbe1,stroke:#2da44e
+```
+
+Three properties this flow is built around:
+
+- **A new question pauses the run — it never gets guessed at and never skips the job.** You answer once; every later application answers it for you.
+- **The approval gate is per channel, per run.** Approving the Greenhouse dry run says nothing about LinkedIn, and nothing about tomorrow.
+- **Bail conditions are dead ends, not obstacles to route around.** A captcha stops the channel; it is never solved.
+
+`knowledge.py` is what maintains that knowledge base: a structured `profile.yaml` and an append-only `answers.yaml` Q&A bank, both under `candidate/`. Scope is enforced in code, not by convention — a `per_role` answer is invisible to a lookup under any other keyword, so two roles can hold different answers to the same question. It refuses to store or enter SSNs, government IDs, bank details, or passwords.
 
 ```bash
 .venv/bin/python knowledge.py init
