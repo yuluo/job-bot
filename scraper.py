@@ -82,7 +82,7 @@ def main():
     )
     parser.add_argument("keyword", help="search keyword, e.g. 'data engineer'")
     parser.add_argument("--location", default=None, help="optional location filter")
-    parser.add_argument("--results", type=int, default=100, help="results per site")
+    parser.add_argument("--results", type=int, default=20, help="results per site")
     parser.add_argument("--out", default=None, help="output CSV path")
     args = parser.parse_args()
 

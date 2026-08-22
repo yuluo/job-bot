@@ -14,7 +14,7 @@ flowchart TB
     B --> A["3. /auto-apply to data engineer jobs"]
     A --> LOG[/"applied.csv<br/>one row per attempt"/]
 
-    S -. "~300 postings<br/>jobs_*.csv" .-> B
+    S -. "~60 postings<br/>jobs_*.csv" .-> B
     TPL -. "every job, skill,<br/>and date you have" .-> B
     B -. "resume.pdf" .-> A
     KB[/"candidate/<br/>profile.yaml + answers.yaml"/] -. "answers each form,<br/>and learns anything new<br/>you are asked" .-> A
@@ -75,7 +75,7 @@ python3 -m venv .venv
 .venv/bin/python scraper.py "platform engineer" --out jobs.csv
 ```
 
-Defaults to 100 results per site. Output is `roles/<slug>/jobs_<timestamp>.csv` with columns:
+Defaults to 20 results per site. Output is `roles/<slug>/jobs_<timestamp>.csv` with columns:
 
 `site, title, company, location, date_posted, salary, employment_type, remote, sponsorship, easy_apply, job_url, job_url_direct, description`
 
@@ -174,7 +174,7 @@ Browser automation runs in the user's own logged-in Chrome via the Claude in Chr
 
 ## Caveats
 
-- LinkedIn rate-limits aggressively (~10 pages per IP). 100 results is at the edge; repeated runs from one IP may return fewer results or get temporarily blocked. JobSpy supports a `proxies` parameter if needed.
+- LinkedIn rate-limits aggressively (~10 pages per IP). The default 20 sits well inside that, but raising `--results` toward 100 pushes at the edge, and repeated runs from one IP may return fewer results or get temporarily blocked. JobSpy supports a `proxies` parameter if needed.
 - Scraping LinkedIn is against its ToS; keep usage low-volume and personal. The same applies to applying — LinkedIn and Indeed both restrict accounts that automate applications, so `/auto-apply` runs those channels last, slowly, and expects them to fail.
 - Only scrape artifacts (`roles/*/jobs_*.csv`, `roles/*/batch_*.json`) are gitignored — they're large and regenerable. `candidate/`, the tailored resumes, and `applied.csv` are committed and travel with your fork. Note that a fork of a public repo is public; see `candidate/README.md` if that matters for your `eeo` fields.
 - Dice's API endpoint and key are unofficial (taken from their own frontend) and may change without notice; all Dice logic is isolated in `dice.py`.
