@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Resume (Anonymized)</title>
+<title>Resume Layout Skeleton</title>
 <style>
   :root {
     --ink: #1a1a1a;
@@ -122,6 +122,14 @@
 </style>
 </head>
 <body>
+  <!--
+    Layout skeleton only. This file supplies the print CSS above and the class
+    vocabulary below; it carries no real resume content by design.
+
+    /setup copies the <style> block verbatim and fills this structure with the
+    candidate's own resume, writing candidate/resume_template.html.
+    Repeat or drop .entry blocks and sections to match the real resume.
+  -->
   <div class="page">
 
     <header>
@@ -132,9 +140,7 @@
 
     <section>
       <h2 class="section-title">Skills</h2>
-      <div class="skill-row"><span class="skill-label">BI &amp; Visualization:</span> Tableau, Power BI (DAX), Qlik Sense, MicroStrategy, QuickSight</div>
-      <div class="skill-row"><span class="skill-label">Data &amp; SQL:</span> Advanced SQL, Dimensional Data Modeling, ETL/ELT, Data Warehousing</div>
-      <div class="skill-row"><span class="skill-label">Tools &amp; Languages:</span> Python, R, SAS, Databricks (PySpark), Excel, A/B Testing</div>
+      <div class="skill-row"><span class="skill-label">[ Group ]:</span> <span class="placeholder">[ comma-separated skills ]</span></div>
     </section>
 
     <section>
@@ -142,38 +148,15 @@
 
       <div class="entry">
         <div class="entry-row">
-          <span class="entry-org"><span class="placeholder">[ Company A ]</span></span>
-          <span class="entry-loc">Rockville, MD</span>
+          <span class="entry-org"><span class="placeholder">[ Employer ]</span></span>
+          <span class="entry-loc"><span class="placeholder">[ Location ]</span></span>
         </div>
         <div class="entry-row">
-          <span class="entry-role">Business Intelligence Engineer</span>
-          <span class="entry-dates">01/2026&ndash;present</span>
+          <span class="entry-role"><span class="placeholder">[ Job title ]</span></span>
+          <span class="entry-dates"><span class="placeholder">[ MM/YYYY&ndash;MM/YYYY ]</span></span>
         </div>
         <ul class="bullets">
-          <li>Partnered with program, finance, and operations stakeholders across <strong>government, insurance and healthcare</strong> clients to define <strong>KPIs</strong> and turn ambiguous requirements into <strong>executive dashboards</strong>.</li>
-          <li><strong>BI Modernization:</strong> Led the migration from legacy <strong>SAS/Excel</strong> reporting to <strong>Tableau</strong> and <strong>Power BI</strong>, and designed a curated, dimensionally modeled data layer in <strong>Databricks</strong> that cut report query times by 20%.</li>
-          <li>Built governed semantic models with reusable <strong>DAX</strong> measures in <strong>Power BI</strong>; and certified, <strong>LOD-based</strong> data sources in <strong>Tableau</strong>; giving client teams consistent, self-service metrics secured with <strong>row-level security</strong> and aligned to <strong>data governance</strong> and <strong>compliance standards</strong>.</li>
-          <li><strong>Data Preparation:</strong> Built and maintained <strong>SQL/PySpark data pipelines</strong> in <strong>Databricks</strong> to consolidate source data into clean, analysis-ready tables for Tableau and Power BI reporting.</li>
-          <li>Authored and tuned complex <strong>SQL (CTEs, window functions, stored procedures)</strong> to build certified datasets, and delivered analytics in two-week <strong>Agile sprints</strong> with requirements gathered directly from non-technical government and business users.</li>
-        </ul>
-      </div>
-
-      <div class="entry">
-        <div class="entry-row">
-          <span class="entry-org"><span class="placeholder">[ Company B ]</span></span>
-          <span class="entry-loc">Remote</span>
-        </div>
-        <div class="entry-row">
-          <span class="entry-role">Lead Data Analyst</span>
-          <span class="entry-dates">07/2014&ndash;11/2024</span>
-        </div>
-        <ul class="bullets">
-          <li>Served as the lead analytics partner for <strong>finance, insurance and healthcare</strong> clients over 10 years, owning end-to-end delivery from <strong>data preparation</strong> through <strong>executive dashboard</strong> and <strong>predictive model</strong>.</li>
-          <li>Built <strong>ETL pipelines</strong> in <strong>SQL</strong> and <strong>SAS</strong> to consolidate data from multiple sources and <strong>automate reporting, reducing runtime by 60%</strong>.</li>
-          <li>Designed dimensional data models and wrote complex <strong>SQL (multi-table joins, window functions, aggregations)</strong> to turn raw campaign and customer data into analysis-ready datasets.</li>
-          <li>Designed and ran <strong>A/B tests, customer profiling, and segmentation analysis</strong> to measure the impact of messaging, channel, and offer strategies.</li>
-          <li>Built and maintained executive dashboards in <strong>Power BI and Tableau (DAX measures, parameters, drill-downs)</strong> that gave client leadership self-service visibility into campaign performance KPIs.</li>
-          <li>Developed predictive models in <strong>Python and R (regression, random forest, XGBoost)</strong> that increased funnel conversion rates by 18%.</li>
+          <li><span class="placeholder">[ Accomplishment bullet ]</span></li>
         </ul>
       </div>
     </section>
@@ -182,14 +165,10 @@
       <h2 class="section-title">Education Background</h2>
       <div class="entry">
         <div class="entry-row">
-          <span class="entry-org"><span class="placeholder">[ University ]</span></span>
-          <span class="entry-dates">Jan 2011 &ndash; May 2014</span>
+          <span class="entry-org"><span class="placeholder">[ Institution ]</span></span>
+          <span class="entry-dates"><span class="placeholder">[ Mon YYYY &ndash; Mon YYYY ]</span></span>
         </div>
-        <div class="entry-row">
-          <span class="entry-loc" style="font-weight:normal;font-style:italic;">Shanghai, China</span>
-        </div>
-        <div class="edu-detail">Major: Bachelor of Science in Mathematics/Statistics</div>
-        <div class="edu-detail">Minor: Computer Science, Management</div>
+        <div class="edu-detail"><span class="placeholder">[ Degree and field ]</span></div>
       </div>
     </section>
 

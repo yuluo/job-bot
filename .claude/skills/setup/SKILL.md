@@ -55,8 +55,9 @@ skip to Step 5 and leave the file untouched.
 Read the resume (`Read` handles PDF and text directly), then write
 `candidate/resume_template.html`.
 
-**Take the styling from `template/resume_template.html`:** copy its entire `<style>` block verbatim
-— `@page`, `@media print`, `break-inside: avoid`, the serif type — and reuse its class vocabulary:
+**Take the styling from `template/resume_template.html`:** an empty skeleton holding the CSS and
+class names and nothing else. Copy its entire `<style>` block verbatim — `@page`, `@media print`,
+`break-inside: avoid`, the serif type — and reuse its class vocabulary:
 
 `.page`, `.name`, `.contact-line`, `.section-title`, `.skill-row` / `.skill-label`, `.entry`,
 `.entry-row`, `.entry-org`, `.entry-loc`, `.entry-role`, `.entry-dates`, `ul.bullets`
@@ -74,7 +75,8 @@ sections and entries follows the candidate's actual resume, not the template's. 
 section the template lacks — certifications, publications, projects — keep it, styled with the same
 `.section-title` and `.entry` classes.
 
-**Remove the `.placeholder` spans.** Every value is real now, so nothing should render with the
+**Remove every `.placeholder` span and `[ ... ]` marker.** The skeleton is built from them; the
+candidate's template must contain none. Every value is real now, so nothing should render with the
 dashed placeholder styling.
 
 **Never invent.** This is transcription, not authoring. If the resume doesn't state a location for a

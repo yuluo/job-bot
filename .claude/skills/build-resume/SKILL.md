@@ -11,9 +11,8 @@ from **`candidate/resume_template.html`**, the editable master that `/setup` tra
 real resume and that they may have hand-edited since. This skill re-emphasizes that content toward
 the target role using that role's scraped job data.
 
-`template/resume_template.html` is a **layout donor only** — its CSS is already carried in the
-candidate's template. Never take experience, skills, or company names from it; that file describes
-someone else's career.
+`template/resume_template.html` is an empty **layout skeleton** — CSS and class names only, no
+content. It is not an input to this skill; the candidate's template already carries that CSS.
 
 One resume per keyword: everything for a keyword lives in `roles/<slug>/`.
 
@@ -68,8 +67,9 @@ date, or credential their template doesn't contain, and never soften a date rang
 description. If the role wants something they don't have, the honest answer is that the resume
 doesn't show it.
 
-**Never** carry `[ Company A ]`, `[ Company B ]`, `[ University ]`, or any content from
-`template/resume_template.html` into the output. Their presence means the wrong source was read.
+**Never** emit `[ NAME ]`, `[ Employer ]`, `[ Job title ]`, or any other `[ ... ]` placeholder, and
+never carry a `.placeholder` span into the output. A placeholder in a finished resume means the
+skeleton was read instead of the candidate's template.
 
 ## Step 6 — Write the output and report
 
