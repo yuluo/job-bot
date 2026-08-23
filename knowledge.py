@@ -76,6 +76,38 @@ PROFILE_SCAFFOLD = {
     },
 }
 
+# Fields whose YAML type matters to consumers. `--value` arrives as a string, so
+# without this a boolean lands as the string "false", which is truthy in Python.
+PROFILE_FIELD_TYPES = {
+    "authorization.work_authorized_us": bool,
+    "authorization.requires_sponsorship": bool,
+    "preferences.willing_to_relocate": bool,
+    "experience.total_years": int,
+}
+
+TRUE_WORDS = {"true", "yes", "y", "1"}
+FALSE_WORDS = {"false", "no", "n", "0"}
+
+
+def coerce_field(field_path, value):
+    """Cast `value` to the type the field expects. Raises ValueError if it cannot."""
+    kind = PROFILE_FIELD_TYPES.get(field_path)
+    if kind is None or not isinstance(value, str):
+        return value
+    text = value.strip()
+    if kind is bool:
+        if text.lower() in TRUE_WORDS:
+            return True
+        if text.lower() in FALSE_WORDS:
+            return False
+        raise ValueError(f"{field_path} expects a boolean, got {value!r}")
+    if kind is int:
+        try:
+            return int(text)
+        except ValueError:
+            raise ValueError(f"{field_path} expects a number, got {value!r}")
+    return value
+
 STOPWORDS = {
     "a", "an", "the", "do", "does", "did", "you", "your", "yours", "are", "is", "was",
     "have", "has", "had", "will", "would", "can", "could", "should", "please", "what",
@@ -200,11 +232,17 @@ def cmd_set(args):
         )
         return
 
-    profile[section][field] = args.value
+    try:
+        value = coerce_field(args.field, args.value)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
+
+    profile[section][field] = value
     dump_yaml(path, profile)
     print(
         json.dumps(
-            {"set": args.field, "value": args.value, "missing": missing_fields(profile)},
+            {"set": args.field, "value": value, "missing": missing_fields(profile)},
             indent=2,
             default=str,
         )

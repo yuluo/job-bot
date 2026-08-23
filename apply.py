@@ -61,6 +61,15 @@ def truthy(value):
     return str(value).strip().lower() in {"true", "1", "yes", "y"}
 
 
+def has_value(value):
+    """True when a scraped cell actually carries a signal (not blank/NaN)."""
+    if value is None:
+        return False
+    if isinstance(value, float) and pd.isna(value):
+        return False
+    return str(value).strip() != ""
+
+
 def role_dir(slug):
     return os.path.join(ROLES_DIR, slug)
 
@@ -143,11 +152,21 @@ def load_profile():
         return yaml.safe_load(fh) or {}
 
 
-def score(row, skills):
-    if not skills:
-        return 0
-    haystack = f"{row.get('title') or ''} {row.get('description') or ''}".lower()
-    return sum(1 for skill in skills if skill.lower() in haystack)
+def score(row, skills, slug_terms=()):
+    """Rank a posting by profile skills, falling back to the search terms.
+
+    `years_by_skill` is empty on a fresh profile, which used to make every score 0
+    and turn the per-channel cap into "first N in CSV order".  The slug terms keep
+    the ranking meaningful in that case: a "WordPress Developer" title outranks an
+    "SEO Specialist" that merely mentions WordPress once.
+    """
+    title = str(row.get("title") or "").lower()
+    haystack = f"{title} {row.get('description') or ''}".lower()
+    total = sum(1 for skill in skills if skill.lower() in haystack)
+    for term in slug_terms:
+        total += 3 * title.count(term)
+        total += min(haystack.count(term), 10)
+    return total
 
 
 def parse_salary_floor(value):
@@ -167,6 +186,11 @@ def main():
     parser.add_argument("--limit-per-channel", type=int, default=10)
     parser.add_argument("--location", default=None)
     parser.add_argument("--min-salary", type=float, default=None)
+    parser.add_argument(
+        "--remote-only",
+        action="store_true",
+        help="keep only rows the board flagged remote (blank is kept: unknown is not a no)",
+    )
     parser.add_argument("--csv", default=None, help="explicit CSV path")
     parser.add_argument("--out", default=None, help="explicit batch JSON path")
     args = parser.parse_args()
@@ -193,7 +217,14 @@ def main():
 
     profile = load_profile()
     skills = list((profile.get("experience") or {}).get("years_by_skill") or {})
-    needs_sponsorship = bool((profile.get("authorization") or {}).get("requires_sponsorship"))
+    needs_sponsorship = truthy((profile.get("authorization") or {}).get("requires_sponsorship"))
+    slug_terms = [t for t in slug.split("-") if len(t) > 2]
+    if not skills:
+        print(
+            "note: experience.years_by_skill is empty; ranking falls back to the "
+            "search terms. Fill it in to rank by your own skills.",
+            file=sys.stderr,
+        )
 
     wanted = [c.strip() for c in args.channels.split(",") if c.strip()]
     seen_urls, seen_keys = read_ledger()
@@ -204,6 +235,7 @@ def main():
         "duplicate_in_batch": 0,
         "unknown_channel": 0,
         "sponsorship": 0,
+        "not_remote": 0,
         "filtered": 0,
     }
     batch_keys = set()
@@ -220,8 +252,14 @@ def main():
         if key in batch_keys:
             dropped["duplicate_in_batch"] += 1
             continue
-        if needs_sponsorship and row.get("sponsorship") is not None and not truthy(row.get("sponsorship")):
+        # Only an explicit negative disqualifies. The scrapers leave this column
+        # blank on nearly every row, and treating blank as "no sponsorship" used
+        # to drop the entire batch for any candidate who needs it.
+        if needs_sponsorship and has_value(row.get("sponsorship")) and not truthy(row.get("sponsorship")):
             dropped["sponsorship"] += 1
+            continue
+        if args.remote_only and has_value(row.get("remote")) and not truthy(row.get("remote")):
+            dropped["not_remote"] += 1
             continue
         if args.location and args.location.lower() not in str(row.get("location") or "").lower():
             dropped["filtered"] += 1
@@ -243,10 +281,13 @@ def main():
                 "location": row.get("location"),
                 "salary": None if pd.isna(row.get("salary")) else row.get("salary"),
                 "employment_type": None if pd.isna(row.get("employment_type")) else row.get("employment_type"),
+                # Board-reported and not always right (Dice especially) — carried
+                # through so a shortlist can be checked rather than trusted.
+                "remote": None if not has_value(row.get("remote")) else truthy(row.get("remote")),
                 "job_url": row.get("job_url"),
                 "apply_url": apply_url,
                 "fallback_url": None if pd.isna(row.get("job_url_direct")) else row.get("job_url_direct"),
-                "match_score": score(row, skills),
+                "match_score": score(row, skills, slug_terms),
             }
         )
 
