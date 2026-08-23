@@ -64,13 +64,25 @@ template/           empty layout skeleton: print CSS and class names only
 
 ## Narrowing a scrape
 
-`/scrape-jobs` reads a location or a result count straight out of your phrasing:
+`/scrape-jobs` reads a location, result count, employment type, or remote preference straight out of your phrasing:
 
 ```
 /scrape-jobs data engineer
 /scrape-jobs machine learning engineer in Austin, TX
 /scrape-jobs platform engineer 50 results
+/scrape-jobs data engineer contract
+/scrape-jobs backend engineer remote full-time
 ```
+
+**Filter support is uneven, and the scraper tells you when it is:**
+
+| Filter | Indeed | LinkedIn | Dice |
+|---|---|---|---|
+| Location | ✅ | ✅ | ✅ |
+| Employment type | ✅ | ❌ ignores it | ✅ |
+| Remote | ✅ | ✅ | ⚠️ unreliable |
+
+LinkedIn accepts an employment-type filter and then returns unfiltered results — asking for contract roles came back with 14 of 15 full-time. Dice's remote field reports `FALSE` on postings literally titled "... (Remote)". Rather than pretend otherwise, a filtered run prints a `note:` naming which sites honored the filter, so you know which slice of the CSV to trust.
 
 It collects 20 per site by default — 60 postings in about 40 seconds. Output is `roles/<slug>/jobs_<timestamp>.csv` with columns:
 
