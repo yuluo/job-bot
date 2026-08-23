@@ -25,12 +25,12 @@ flowchart TB
     style R fill:#fff8c5,stroke:#bf8700
 ```
 
-| Step | Skill | Script | Reads | Writes |
-|---|---|---|---|---|
-| 0. Set up (once) | `/setup` | `knowledge.py`, `render_pdf.py` | your resume in `candidate/` | `candidate/resume_template.html`, `profile.yaml` |
-| 1. Collect | `/scrape-jobs <keyword>` | `scraper.py`, `dice.py` | Indeed, LinkedIn, Dice | `roles/<slug>/jobs_<timestamp>.csv` |
-| 2. Tailor | `/build-resume for <keyword> positions` | `render_pdf.py` | your template + that role's CSV | `roles/<slug>/resume.{html,pdf}` |
-| 3. Apply | `/auto-apply to <keyword> jobs` | `apply.py`, `knowledge.py` | the resume + `candidate/` | `applied.csv` |
+| Step | Command | Reads | Writes |
+|---|---|---|---|
+| 0. Set up (once) | `/setup` | your resume in `candidate/` | `candidate/resume_template.html`, `profile.yaml` |
+| 1. Collect | `/scrape-jobs <keyword>` | Indeed, LinkedIn, Dice | `roles/<slug>/jobs_<timestamp>.csv` |
+| 2. Tailor | `/build-resume for <keyword> positions` | your template + that role's CSV | `roles/<slug>/resume.{html,pdf}` |
+| 3. Apply | `/auto-apply to <keyword> jobs` | the resume + `candidate/` | `applied.csv` |
 
 Two things are worth noticing in the diagram:
 
@@ -53,21 +53,6 @@ Two things are worth noticing in the diagram:
 
 Re-running `/setup` is safe: it skips the venv if it exists, asks before regenerating your resume template, and won't overwrite profile values you've edited by hand.
 
-<details>
-<summary>Setting up without Claude Code</summary>
-
-The skills are the intended interface, but the scripts run standalone. If you're not using Claude Code, or `/setup` fails partway:
-
-```bash
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/python knowledge.py init
-```
-
-You'd then write `candidate/resume_template.html` yourself, using `template/resume_template.html` as the skeleton.
-
-</details>
-
 ## Layout
 
 ```
@@ -77,17 +62,17 @@ applied.csv         global ledger of every application attempt
 template/           empty layout skeleton: print CSS and class names only
 ```
 
-## Running the scraper directly
+## Narrowing a scrape
 
-The `/scrape-jobs` skill wraps this, but the script takes the same arguments if you'd rather call it yourself:
+`/scrape-jobs` reads a location or a result count straight out of your phrasing:
 
-```bash
-.venv/bin/python scraper.py "data engineer"
-.venv/bin/python scraper.py "machine learning engineer" --location "Austin, TX" --results 50
-.venv/bin/python scraper.py "platform engineer" --out jobs.csv
+```
+/scrape-jobs data engineer
+/scrape-jobs machine learning engineer in Austin, TX
+/scrape-jobs platform engineer 50 results
 ```
 
-Defaults to 20 results per site. Output is `roles/<slug>/jobs_<timestamp>.csv` with columns:
+It collects 20 per site by default — 60 postings in about 40 seconds. Output is `roles/<slug>/jobs_<timestamp>.csv` with columns:
 
 `site, title, company, location, date_posted, salary, employment_type, remote, sponsorship, easy_apply, job_url, job_url_direct, description`
 
@@ -100,11 +85,11 @@ The apply-oriented columns (`job_url_direct`, `easy_apply`, `sponsorship`, `empl
 
 A failure on one site does not abort the run — the script collects what succeeds and prints per-site counts.
 
-## Applying (`apply.py`, `knowledge.py`)
+## How applying works
 
 ### How a posting gets routed
 
-`apply.py` turns a scraped CSV into a shortlist, classifying each posting into an application channel. Not every posting is worth attempting, and the ones that are differ a lot in how reliably they can be filled:
+Before opening a browser, `/auto-apply` turns the scraped CSV into a shortlist, classifying each posting into an application channel. Not every posting is worth attempting, and the ones that are differ a lot in how reliably they can be filled:
 
 ```mermaid
 flowchart LR
@@ -175,18 +160,13 @@ Three properties this flow is built around:
 - **The approval gate is per channel, per run.** Approving the Greenhouse dry run says nothing about LinkedIn, and nothing about tomorrow.
 - **Bail conditions are dead ends, not obstacles to route around.** A captcha stops the channel; it is never solved.
 
-`knowledge.py` is what maintains that knowledge base: a structured `profile.yaml` and an append-only `answers.yaml` Q&A bank, both under `candidate/`. Scope is enforced in code, not by convention — a `per_role` answer is invisible to a lookup under any other keyword, so two roles can hold different answers to the same question. It refuses to store or enter SSNs, government IDs, bank details, or passwords.
-
-```bash
-.venv/bin/python knowledge.py init
-.venv/bin/python apply.py <slug> --limit-per-channel 10
-```
+That knowledge base is two files under `candidate/`: a structured `profile.yaml` and an append-only `answers.yaml` Q&A bank. Scope is enforced in code, not by convention — a `per_role` answer is invisible to a lookup under any other keyword, so two roles can hold different answers to the same question. It refuses to store or enter SSNs, government IDs, bank details, or passwords.
 
 Browser automation runs in the user's own logged-in Chrome via the Claude in Chrome extension. It does **not** solve captchas, spoof fingerprints, or rotate proxies — a real profile avoids the signals a headless scraper trips, but the dominant detection signal is behavioral, which is why the skill paces submissions and hard-stops after three consecutive failures in a channel.
 
 ## Caveats
 
-- LinkedIn rate-limits aggressively (~10 pages per IP). The default 20 sits well inside that, but raising `--results` toward 100 pushes at the edge, and repeated runs from one IP may return fewer results or get temporarily blocked. JobSpy supports a `proxies` parameter if needed.
+- LinkedIn rate-limits aggressively (~10 pages per IP). The default 20 sits well inside that, but asking for 100 results pushes at the edge, and repeated runs from one IP may return fewer results or get temporarily blocked. JobSpy supports a `proxies` parameter if needed.
 - Scraping LinkedIn is against its ToS; keep usage low-volume and personal. The same applies to applying — LinkedIn and Indeed both restrict accounts that automate applications, so `/auto-apply` runs those channels last, slowly, and expects them to fail.
 - Only scrape artifacts (`roles/*/jobs_*.csv`, `roles/*/batch_*.json`) are gitignored — they're large and regenerable. `candidate/`, the tailored resumes, and `applied.csv` are committed and travel with your fork. Note that a fork of a public repo is public; see `candidate/README.md` if that matters for your `eeo` fields.
 - Dice's API endpoint and key are unofficial (taken from their own frontend) and may change without notice; all Dice logic is isolated in `dice.py`.
