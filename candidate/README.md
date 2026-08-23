@@ -6,12 +6,17 @@ works.
 **Step 2 — run `/setup`.** It reads your resume and writes `resume_template.html` — your whole
 career in clean, editable HTML — then fills in what it can of `profile.yaml`.
 
-**Step 3 — check `resume_template.html`.** It opens in your browser automatically. Read it against
-your original: PDFs with columns, tables, or images are where a line most often gets dropped or
-reordered. Fix anything wrong directly in the HTML.
+**Step 3 — confirm the transcription.** `/setup` won't finish until you do. It opens the file in
+your browser and shows you an inventory of what it pulled out — how many roles, how many bullets in
+each, which skill groups, what it filled into your profile. Check those counts against your
+original: PDFs with columns, tables, or images are where a line most often goes missing, and a
+missing bullet is invisible on a rendered page but obvious when the count is wrong.
 
-That last step matters more than it sounds. Every tailored resume is built from this file, so a
-correction here is a correction everywhere, and a mistake here follows you into every application.
+Say what's off and it will fix it; you can also edit the HTML yourself at any point later.
+
+This step matters more than it sounds. Every tailored resume is built from this file, so a
+correction here is a correction everywhere — and a mistake here follows you into every application
+you send.
 
 Then, for each role you're targeting:
 
