@@ -1,6 +1,6 @@
 ---
 name: setup
-description: One-time onboarding for a forked job-bot repo. Checks candidate/ for the user's resume and prompts for one if missing, then transcribes it into an editable HTML template that every later tailored resume is built from. Also creates the venv and the candidate knowledge base. Use when the user has just forked the repo, dropped their resume in, or asks how to get started.
+description: One-time onboarding for a forked job-bot repo. Checks candidate/ for the user's resume and prompts for one if missing, transcribes it into an editable HTML template that every later tailored resume is built from, then reviews that transcription with the user before finishing. Also creates the venv and the candidate knowledge base. Use when the user has just forked the repo, dropped their resume in, or asks how to get started.
 argument-hint: (no arguments)
 ---
 
@@ -8,7 +8,8 @@ One-time onboarding. Run this before anything else in a fresh fork.
 
 The output that matters is **`candidate/resume_template.html`** — the candidate's real resume in
 clean, editable HTML. Every tailored resume `/build-resume` produces is derived from it, so getting
-it right, and letting the candidate correct it by hand, is the whole point of this skill.
+it right is the whole point of this skill. That is why Step 8 is a checkpoint: you do not finish
+until the candidate has confirmed the transcription is faithful.
 
 Work through the steps in order and report what each one did.
 
@@ -110,24 +111,65 @@ inference. **Report it as a suggestion** and let the user confirm it rather than
 
 Finish by noting which fields are still missing.
 
-## Step 7 — Render, open, and report
+## Step 7 — Render and open
 
 ```bash
 .venv/bin/python render_pdf.py candidate/resume_template.html
 open candidate/resume_template.html
 ```
 
-`open` puts it in the user's default browser so they can review it right away. Also send the
-rendered PDF with `SendUserFile` so it is visible without leaving the terminal.
+`open` puts it in the user's default browser. Also send the rendered PDF with `SendUserFile` so it
+is visible without leaving the terminal.
 
-Then report:
+## Step 8 — Review it with the user (checkpoint)
+
+**Stop here and get confirmation before finishing.** This file becomes the basis of every resume and
+every application that follows, so an error here propagates to every employer the candidate contacts.
+It is also the one moment they have the original in mind.
+
+You transcribed this from a PDF. Content gets dropped or reordered silently — multi-column layouts,
+tables, text inside images, and header/footer text are the usual culprits. A rendered page looks
+fine whether or not a bullet went missing, so **do not ask "does this look right?" over the PDF
+alone.** Give them an inventory they can check against their original:
+
+```
+Transcribed 2 roles, 11 bullets, 3 skill groups, 1 degree.
+
+  Ant Technology LLC. — Business Intelligence Engineer
+  Rockville, MD · 01/2026–present · 5 bullets
+
+  Merkle (Dentsu Group) — Lead Data Analyst
+  Remote · 07/2014–11/2024 · 6 bullets
+
+  Skills: BI & Visualization (5), Data & SQL (4), Tools & Languages (6)
+  Education: East China Normal University, Jan 2011 – May 2014
+
+Profile pre-filled from the resume:
+  name Claire Shi · claireshi0910@outlook.com · (626) 782-3631 · Rockville, MD
+```
+
+Counts are what make an omission visible — nobody spots a missing bullet by looking at a page, but
+they will notice "5 bullets" when they wrote six. Call out anything you were unsure of: a date you
+had to interpret, a section you couldn't place, text you skipped as decoration.
+
+Then ask, with `AskUserQuestion`:
+
+- **Looks right** — continue to Step 9.
+- **Something's missing or wrong** — have them say what. Fix it in the HTML, re-render, show the
+  updated inventory, and ask again. Repeat until they confirm; there is no limit on rounds here.
+- **Contact details are wrong** — correct both the HTML and `profile.yaml`. `set` refuses to
+  overwrite, so pass `--force` for those fields.
+
+If the resume was a text or Markdown file rather than a PDF, say so — extraction was reliable, and
+the review is a formality rather than a real risk. Don't manufacture concern you don't have.
+
+## Step 9 — Report
+
+Once they've confirmed:
 
 - both output paths;
 - which profile fields were filled, and which `/auto-apply` will still ask for;
 - the `total_years` suggestion, if you have one;
-- that `candidate/resume_template.html` is theirs to edit directly, and edits flow into every
+- that `candidate/resume_template.html` is theirs to edit at any time, and edits flow into every
   resume built afterward;
 - that the next step is `/scrape-jobs <keyword>` for whatever role they're targeting.
-
-Ask them to check the transcription against their original — you read it from a PDF, and layout
-quirks like multi-column resumes or images are where content most often gets dropped or reordered.

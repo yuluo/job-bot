@@ -335,6 +335,55 @@ def cmd_record(args):
     print(json.dumps({"created": key, "scope": args.scope, "role": entry.get("role"), "total_entries": len(entries)}, indent=2))
 
 
+def cmd_revise(args):
+    """Correct an existing entry after review, without counting it as a reuse."""
+    if args.answer is not None and is_blocked(args.answer):
+        print("refusing to store a prohibited identifier", file=sys.stderr)
+        sys.exit(2)
+
+    path = answers_path()
+    entries = load_yaml(path, [])
+    for i, entry in enumerate(entries):
+        if entry.get("key") != args.key or not in_scope(entry, args.role):
+            continue
+
+        if args.delete:
+            entries.pop(i)
+            dump_yaml(path, entries)
+            print(json.dumps({"deleted": args.key, "remaining": len(entries)}, indent=2))
+            return
+
+        if args.answer is not None:
+            entry["answer"] = args.answer
+        if args.scope is not None:
+            entry["scope"] = args.scope
+            # role only means anything for per_role; carrying a stale one is misleading
+            if args.scope == "per_role":
+                entry["role"] = args.role
+            else:
+                entry.pop("role", None)
+
+        # deliberately no reuse_count bump: a correction is not a reuse
+        dump_yaml(path, entries)
+        print(
+            json.dumps(
+                {
+                    "revised": args.key,
+                    "scope": entry.get("scope"),
+                    "role": entry.get("role"),
+                    "answer": entry.get("answer"),
+                    "reuse_count": entry.get("reuse_count", 0),
+                },
+                indent=2,
+                default=str,
+            )
+        )
+        return
+
+    print(f"no entry with key {args.key!r} in scope for role {args.role!r}", file=sys.stderr)
+    sys.exit(1)
+
+
 def cmd_bump(args):
     path = answers_path()
     entries = load_yaml(path, [])
@@ -381,6 +430,14 @@ def main():
     p.add_argument("--key", default=None)
     p.add_argument("--asked-at", default=None)
     p.set_defaults(func=cmd_record)
+
+    p = sub.add_parser("revise", help="correct an entry after review (no reuse_count bump)")
+    p.add_argument("--key", required=True)
+    p.add_argument("--role", required=True, help="keyword slug the entry was recorded under")
+    p.add_argument("--answer", default=None, help="replacement answer")
+    p.add_argument("--scope", default=None, choices=["global", "per_role", "per_company"])
+    p.add_argument("--delete", action="store_true", help="remove the entry entirely")
+    p.set_defaults(func=cmd_revise)
 
     p = sub.add_parser("bump", help="increment reuse_count after a reuse")
     p.add_argument("--key", required=True)
