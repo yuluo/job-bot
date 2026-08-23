@@ -40,7 +40,7 @@ def _salary(row):
     return f"{amount} / {interval}" if pd.notna(interval) else amount
 
 
-def scrape_jobspy_site(site, keyword, location, results):
+def scrape_jobspy_site(site, keyword, location, results, job_type=None, remote=False):
     from jobspy import scrape_jobs
 
     kwargs = {
@@ -51,6 +51,10 @@ def scrape_jobspy_site(site, keyword, location, results):
     }
     if location:
         kwargs["location"] = location
+    if job_type:
+        kwargs["job_type"] = job_type
+    if remote:
+        kwargs["is_remote"] = True
     if site == "linkedin":
         kwargs["linkedin_fetch_description"] = True
     df = scrape_jobs(**kwargs)
@@ -83,6 +87,15 @@ def main():
     parser.add_argument("keyword", help="search keyword, e.g. 'data engineer'")
     parser.add_argument("--location", default=None, help="optional location filter")
     parser.add_argument("--results", type=int, default=20, help="results per site")
+    parser.add_argument(
+        "--job-type",
+        default=None,
+        choices=["fulltime", "parttime", "contract", "internship"],
+        help="employment type filter",
+    )
+    parser.add_argument(
+        "--remote", action="store_true", help="remote postings only"
+    )
     parser.add_argument("--out", default=None, help="output CSV path")
     args = parser.parse_args()
 
@@ -92,7 +105,9 @@ def main():
     for site in ("indeed", "linkedin"):
         print(f"Scraping {site}...", flush=True)
         try:
-            df = scrape_jobspy_site(site, args.keyword, args.location, args.results)
+            df = scrape_jobspy_site(
+                site, args.keyword, args.location, args.results, args.job_type, args.remote
+            )
             counts[site] = len(df)
             if not df.empty:
                 frames.append(df)
@@ -102,7 +117,13 @@ def main():
 
     print("Scraping dice...", flush=True)
     try:
-        rows = dice.search(args.keyword, args.location, args.results)
+        rows = dice.search(
+            args.keyword,
+            args.location,
+            args.results,
+            job_type=args.job_type,
+            remote=args.remote,
+        )
         counts["dice"] = len(rows)
         if rows:
             frames.append(pd.DataFrame(rows))
@@ -128,6 +149,22 @@ def main():
 
     summary = ", ".join(f"{site}: {n}" for site, n in counts.items())
     print(f"{summary} -> {out_path} ({len(combined)} rows)")
+
+    # LinkedIn accepts the f_JT filter but returns unfiltered results; asking for
+    # contract roles comes back full of full-time ones. Say so at the moment it
+    # matters rather than letting the CSV imply the filter applied everywhere.
+    if args.job_type and counts.get("linkedin"):
+        print(
+            f"note: LinkedIn ignores --job-type; its {counts['linkedin']} rows are unfiltered. "
+            "Indeed and Dice honored it.",
+            file=sys.stderr,
+        )
+    if args.remote and counts.get("dice"):
+        print(
+            f"note: Dice's remote flag is unreliable; its {counts['dice']} rows may include "
+            "on-site roles. Indeed and LinkedIn honored --remote.",
+            file=sys.stderr,
+        )
 
 
 if __name__ == "__main__":
