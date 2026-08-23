@@ -137,10 +137,56 @@ on, so an interrupted run never re-applies on resume. Columns: `applied_at, keyw
 company, title, job_url, apply_url, status, notes` with
 `status ∈ {submitted, skipped, failed, needs_human}`.
 
-## Step 7 — Report
+## Step 7 — Confirm what the answers bank learned (checkpoint)
+
+If this run recorded **any** new entries in `candidate/answers.yaml`, **stop and review them with
+the user before reporting.**
+
+These answers were given mid-batch, often quickly, to unblock one application. They are now
+permanent: every future application that asks a similar question gets that answer automatically,
+without asking again. A rushed sentence becomes the candidate's standing answer to every employer
+unless someone looks at it now, while they still remember the question.
+
+Show each new entry — the question as the form worded it, the answer recorded, and the scope:
+
+```
+3 new answers recorded this run:
+
+  global · "How many years of experience do you have with Kubernetes?" → "5"
+      replays for every role and every employer
+
+  per_role (devops-engineer) · "Are you comfortable with on-call rotation?" → "Yes, I've carried
+      a weekly on-call rotation for three years."
+      replays only under devops-engineer
+
+  per_company (Acme) · "Why do you want to work at Acme?" → "..."
+      never replayed verbatim; rewritten per employer
+```
+
+Sort `global` first and draw attention to those — they carry furthest. Flag any answer that reads as
+written-in-haste, and any where the scope looks wrong: an answer naming an employer that got saved
+as `global` is the one to catch, because it will be replayed verbatim to a different company.
+
+Ask with `AskUserQuestion` whether to keep them as recorded, reword any, or change a scope. Apply
+their edits with `revise` before reporting:
+
+```bash
+.venv/bin/python knowledge.py revise --key <key> --role <slug> --answer "..."
+.venv/bin/python knowledge.py revise --key <key> --role <slug> --scope per_company
+.venv/bin/python knowledge.py revise --key <key> --role <slug> --delete
+```
+
+`revise` deliberately does not bump `reuse_count` — a correction is not a reuse, and that counter is
+how the user spots which stock answers are carrying the most weight. Re-scoping to `per_company`
+also clears the stale `role` field.
+
+Say nothing here if the run recorded no new answers — that is the normal state once the bank is
+mature, and it is a good sign, not a step to perform anyway.
+
+## Step 8 — Report
 
 - Per-channel counts: submitted / skipped / failed / needs_human.
 - The ledger path and the batch JSON path.
 - An explicit list of `needs_human` jobs with URLs and the reason each one bailed — these are the
   user's to finish, so do not bury them.
-- Any new answers-bank entries created this run, so the user can refine the wording by hand.
+- The answers-bank entries confirmed in Step 7, if any.

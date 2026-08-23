@@ -88,7 +88,17 @@ these; honor it.
 scope for `--role`. Normalization lowercases, strips punctuation, drops the company name and generic
 filler words.
 
-`--role` is required on `lookup`, `record`, and `bump`.
+`--role` is required on `lookup`, `record`, `revise`, and `bump`.
+
+## Correcting an entry after the fact
+
+`knowledge.py revise --key <key> --role <slug>` edits an existing entry: `--answer` to reword,
+`--scope` to re-scope, `--delete` to remove it. `/auto-apply` uses it at the end of a run when the
+user reviews what was learned.
+
+Unlike `record`, it does **not** bump `reuse_count` — a correction is not a reuse, and that counter
+is what shows which answers are load-bearing. Re-scoping away from `per_role` clears the now
+meaningless `role` field.
 
 Auto-accept threshold is **0.75 Jaccard**. It is deliberately strict: "years of experience with
 Terraform" scores 0.5 against the Kubernetes entry above and correctly does **not** match. A wrong
