@@ -1,6 +1,6 @@
 ---
 name: setup
-description: One-time onboarding for a forked job-bot repo. Checks candidate/ for the user's resume and prompts for one if missing, transcribes it into an editable HTML template that every later tailored resume is built from, then reviews that transcription with the user before finishing. Also creates the venv and the candidate knowledge base. Use when the user has just forked the repo, dropped their resume in, or asks how to get started.
+description: One-time onboarding for a forked job-bot repo. Checks candidate/ for the user's resume and prompts for one if missing, transcribes it into an editable HTML template that every later tailored resume is built from, then reviews that transcription with the user before finishing. Also creates the venv and the candidate knowledge base, and checks whether Chrome is signed in to Indeed, LinkedIn, and Dice so /auto-apply can drive them later. Use when the user has just forked the repo, dropped their resume in, or asks how to get started.
 argument-hint: (no arguments)
 ---
 
@@ -163,7 +163,70 @@ Then ask, with `AskUserQuestion`:
 If the resume was a text or Markdown file rather than a PDF, say so — extraction was reliable, and
 the review is a formality rather than a real risk. Don't manufacture concern you don't have.
 
-## Step 9 — Report
+## Step 9 — Check the job board sessions
+
+`/auto-apply` drives the user's own Chrome. Every board this repo scrapes — Indeed, LinkedIn, Dice
+— only shows an apply flow to a signed-in user, and **this skill can never sign in for them**:
+creating accounts and entering passwords are prohibited, always. So the session has to already
+exist, and the cheap moment to find that out is now. Discovering it mid-batch is expensive — it
+kills a channel partway through, after the run has already left a footprint on the board.
+
+Load the browser tools in **one** `ToolSearch` call:
+
+```
+select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__tabs_create_mcp,mcp__claude-in-chrome__tabs_close_mcp,mcp__claude-in-chrome__get_page_text
+```
+
+Call `tabs_context_mcp` before anything else, then create **one** fresh tab and reuse it for all
+three probes. Don't touch the user's existing tabs.
+
+Probe each board with a URL that only renders for a signed-in user:
+
+| Board | Probe URL | Signed in | Signed out |
+| --- | --- | --- | --- |
+| LinkedIn | `https://www.linkedin.com/feed/` | stays on `/feed/`, title becomes `Feed \| LinkedIn` | redirects to `/login` or the guest homepage |
+| Indeed | `https://myjobs.indeed.com/saved` | stays on `/saved`, title `My jobs \| Indeed` | redirects to `secure.indeed.com/auth` |
+| Dice | `https://www.dice.com/dashboard` | stays on `/dashboard` | redirects to `/dashboard/login?redirectUrl=...` |
+
+These URLs and signals were verified against a live browser; the title change is the cleanest tell
+for LinkedIn and Indeed, since both keep the requested path when the session is good.
+
+**Read the tab's final URL, not just the screenshot.** Every one of these answers with a redirect,
+and a login page can look like a perfectly ordinary page in a screenshot. `navigate` reports the
+resolved URL — that is the signal. Reach for `get_page_text` only when the URL is ambiguous.
+
+**Let Dice settle before judging it.** It renders a "Checking your session…" spinner on the login
+URL for a few seconds. That interstitial is not an answer: wait ~4 seconds and re-read the URL
+before calling it. A signed-out Dice lands on `/dashboard/login`; a signed-in one returns to the
+dashboard.
+
+Then report a line per board, and for any that are signed out, **ask the user to sign in themselves**
+in that Chrome window and offer to re-check:
+
+```
+LinkedIn — signed in
+Indeed   — signed out
+Dice     — signed in
+```
+
+**Never sign in, and never offer to.** If the user supplies credentials anyway, decline and point
+them at the browser window. This holds even if they insist.
+
+**Don't block on it.** A signed-out board is a note for later, not a failure — the resume template
+is what this skill exists to produce, and it is already done. Say which boards are ready, which
+need a sign-in before `/auto-apply`, and move on to the report.
+
+Two things that will happen and are not bugs:
+
+- **Indeed throws bot checks.** It may answer with an interstitial that is neither state. Report
+  `couldn't determine` for that board rather than guessing — a wrong "signed in" is worse than an
+  honest unknown.
+- **Chrome may not be connected at all.** If the browser tools error out, say so plainly, skip the
+  step, and note that `/auto-apply` will need the sessions checked then.
+
+Close the tab you created when you're done.
+
+## Step 10 — Report
 
 Once they've confirmed:
 
@@ -172,4 +235,5 @@ Once they've confirmed:
 - the `total_years` suggestion, if you have one;
 - that `candidate/resume_template.html` is theirs to edit at any time, and edits flow into every
   resume built afterward;
+- the board sign-in status from Step 9, naming any board that needs a sign-in before `/auto-apply`;
 - that the next step is `/scrape-jobs <keyword>` for whatever role they're targeting.
