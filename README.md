@@ -42,7 +42,7 @@ Two things are worth noticing in the diagram:
 
 1. Fork this repo.
 2. Drop your resume into `candidate/` — PDF, DOCX, Markdown, or text.
-3. Run `/setup` once. It builds the venv, transcribes your resume into an editable HTML template, and pre-fills what it can of your profile.
+3. Run `/setup` once. There is no manual setup step before this — `/setup` creates the `.venv` and installs requirements itself, then transcribes your resume into an editable HTML template and pre-fills what it can of your profile.
 4. Then run the pipeline for each role you're targeting:
 
 ```
@@ -51,23 +51,35 @@ Two things are worth noticing in the diagram:
 /auto-apply to data engineer jobs
 ```
 
+Re-running `/setup` is safe: it skips the venv if it exists, asks before regenerating your resume template, and won't overwrite profile values you've edited by hand.
+
+<details>
+<summary>Setting up without Claude Code</summary>
+
+The skills are the intended interface, but the scripts run standalone. If you're not using Claude Code, or `/setup` fails partway:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python knowledge.py init
+```
+
+You'd then write `candidate/resume_template.html` yourself, using `template/resume_template.html` as the skeleton.
+
+</details>
+
 ## Layout
 
 ```
 candidate/          your resume, resume_template.html, profile.yaml, answers.yaml
 roles/<slug>/       jobs_*.csv, resume.html, resume.pdf, batch_*.json
 applied.csv         global ledger of every application attempt
-template/           resume layout + experience content
+template/           empty layout skeleton: print CSS and class names only
 ```
 
-## Setup
+## Running the scraper directly
 
-```bash
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-```
-
-## Usage
+The `/scrape-jobs` skill wraps this, but the script takes the same arguments if you'd rather call it yourself:
 
 ```bash
 .venv/bin/python scraper.py "data engineer"
