@@ -1,0 +1,30 @@
+identity:
+  full_name: Xuan (Shawn) Dai
+  email: dai.x@outlook.com
+  phone: 402-937-0257
+  city: Plano
+  state: TX
+  country: United States
+  linkedin_url: https://www.linkedin.com/in/xuan-shawn-dai
+  portfolio_url: null
+authorization:
+  work_authorized_us: true
+  requires_sponsorship: false
+  visa_status: null
+preferences:
+  desired_salary: $80,000
+  earliest_start: immediately
+  willing_to_relocate: null
+  remote_preference: null
+experience:
+  total_years: 8
+  years_by_skill: {}
+eeo:
+  gender: decline_to_answer
+  race: decline_to_answer
+  veteran_status: decline_to_answer
+  disability_status: decline_to_answer
+defaults:
+  cover_letter_template: null
+  referral_source: null
+  notice_period: null

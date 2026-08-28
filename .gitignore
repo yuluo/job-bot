@@ -6,3 +6,7 @@ __pycache__/
 # scrape artifacts: large and regenerable
 roles/*/jobs_*.csv
 roles/*/batch_*.json
+
+*.csv
+*.pdf
+roles_archive/**

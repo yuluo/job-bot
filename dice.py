@@ -79,7 +79,15 @@ def search(
     raw_jobs = []
     page = 1
     while len(raw_jobs) < results_wanted:
-        params = {"q": keyword, "page": page, "pageSize": min(results_wanted, 100)}
+        # Dice defaults to sortBy=relevance; ask for newest-first so a
+        # --results N run returns the N most recent, not the N most relevant
+        # (which buries today's postings behind older high-relevance ones).
+        params = {
+            "q": keyword,
+            "page": page,
+            "pageSize": min(results_wanted, 100),
+            "sortBy": "datePosted",
+        }
         if location:
             params["location"] = location
         if job_type and job_type in EMPLOYMENT_TYPES:

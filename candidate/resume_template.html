@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xuan (Shawn) Dai — Resume</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --rule: #1a1a1a;
+    --placeholder: #8a8a8a;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #f4f4f4;
+    color: var(--ink);
+    font-family: Georgia, "Times New Roman", Times, serif;
+    font-size: 10pt;
+    line-height: 1.15;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page {
+    max-width: 8.5in;
+    min-height: 11in;
+    margin: 24px auto;
+    padding: 0.6in;
+    background: #fff;
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.12);
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .name {
+    font-size: 16pt;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    margin: 0 0 3px;
+  }
+
+  .contact-line {
+    font-size: 9pt;
+    margin: 1px 0;
+    color: var(--muted);
+  }
+
+  .placeholder {
+    color: var(--placeholder);
+    border-bottom: 1px dashed #bcbcbc;
+    padding: 0 4px;
+    font-style: normal;
+  }
+
+  /* ---------- Sections ---------- */
+  section { margin-bottom: 7px; }
+
+  .section-title {
+    font-size: 10pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1.5px solid var(--rule);
+    padding-bottom: 2px;
+    margin: 0 0 4px;
+  }
+
+  /* ---------- Skills ---------- */
+  .skill-row { margin: 3px 0; }
+  .skill-label { font-weight: bold; }
+
+  /* ---------- Experience / Education entries ---------- */
+  .entry { margin-bottom: 6px; break-inside: avoid; page-break-inside: avoid; }
+
+  .entry-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .entry-org { font-weight: bold; }
+  .entry-loc { font-weight: bold; white-space: nowrap; }
+  .entry-role { font-style: italic; }
+  .entry-dates { font-style: italic; white-space: nowrap; }
+
+  ul.bullets {
+    margin: 2px 0 0;
+    padding-left: 20px;
+  }
+
+  ul.bullets li { margin: 1px 0; }
+
+  .edu-detail { margin: 2px 0; }
+
+  /* ---------- Print ---------- */
+  @page {
+    size: letter;
+    margin: 0.4in;
+  }
+
+  @media print {
+    html, body { background: #fff; font-size: 9pt; }
+    .page {
+      margin: 0;
+      padding: 0;
+      max-width: none;
+      min-height: 0;
+      box-shadow: none;
+    }
+    .placeholder { border-bottom-color: #999; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+
+    <header>
+      <div class="name">Xuan (Shawn) Dai</div>
+      <div class="contact-line">Plano, TX</div>
+      <div class="contact-line">dai.x@outlook.com | 402-937-0257 | linkedin.com/in/xuan-shawn-dai | Work authorization: no sponsorship required</div>
+    </header>
+
+    <section>
+      <h2 class="section-title">Skills</h2>
+      <div class="skill-row"><span class="skill-label">Data Engineering:</span> dbt, Databricks (PySpark, SQL), Snowflake, BigQuery, Redshift, Airflow, ETL/ELT Pipelines, Dimensional Modeling, SCD2 &amp; Incremental, Medallion Architecture, CI/CD (GitHub Actions), AWS</div>
+      <div class="skill-row"><span class="skill-label">BI &amp; Visualization:</span> Tableau (LOD, Row-Level Security), Power BI (DAX), Looker, QuickSight, Databricks Genie, Excel</div>
+      <div class="skill-row"><span class="skill-label">Data Science &amp; Analytics:</span> Python, SQL (advanced), Spark, SAS, A/B Testing, KPI Definition, Data Governance &amp; Quality</div>
+      <div class="skill-row"><span class="skill-label">Healthcare:</span> Medical claims, eligibility, HEDIS, ICD-10/CPT, HIPAA, Medicaid</div>
+    </section>
+
+    <section>
+      <h2 class="section-title">Experience</h2>
+
+      <div class="entry">
+        <div class="entry-row">
+          <span class="entry-org">Ant Technology LLC</span>
+          <span class="entry-loc">Rockville, MD</span>
+        </div>
+        <div class="entry-row">
+          <span class="entry-role">Senior Business Intelligence Engineer</span>
+          <span class="entry-dates">01/2025–Present</span>
+        </div>
+        <ul class="bullets">
+          <li><strong>Stakeholder Partnership:</strong> Partnered with program, finance, and operations stakeholders across government, insurance, and healthcare clients to define KPIs and turn ambiguous requirements into executive dashboards.</li>
+          <li><strong>BI Modernization:</strong> Led the migration from legacy SAS/Excel reporting to Tableau and Power BI dashboards on healthcare cost and quality metrics, cutting report query times by 20%.</li>
+          <li><strong>Semantic Modeling &amp; Governance:</strong> Built governed semantic models with reusable DAX measures in Power BI and certified, LOD-based data sources in Tableau, giving client teams consistent, self-service metrics secured with row-level security and aligned to data governance and compliance standards.</li>
+          <li><strong>Self-Service &amp; AI:</strong> Delivered a Databricks Genie AI assistant, enabling business users to query governed metrics in natural language for self-service analytics.</li>
+          <li><strong>Data Modeling &amp; Pipelines:</strong> Built dbt / SQL / PySpark pipelines in Databricks on a medallion architecture; modeled medical claims, eligibility, and provider data (~50K members, 630K+ claims) into star-schema marts with SCD2 and incremental models, automated dbt tests, and GitHub Actions CI/CD.</li>
+          <li><strong>SQL &amp; Agile Delivery:</strong> Authored and tuned complex SQL (CTEs, window functions, stored procedures) to build certified datasets, and delivered analytics in two-week Agile sprints with requirements gathered directly from non-technical government and business users.</li>
+        </ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-row">
+          <span class="entry-org">Oriental Trading Company, Inc.</span>
+          <span class="entry-loc">Omaha, NE</span>
+        </div>
+        <div class="entry-row">
+          <span class="entry-role">Advanced Analytics Analyst (Analytics Engineering)</span>
+          <span class="entry-dates">May 2022–Jan 2025</span>
+        </div>
+        <ul class="bullets">
+          <li><em>2024 Company Milestone Award — Customer Selection Project, 1 of 10 company-wide</em></li>
+          <li><strong>Data Engineering:</strong> Migrated 50+ core analytics pipelines (customer lifetime value, promo sensitivity) from Netezza to Snowflake, and re-engineered an 8-hour monthly full-refresh into an incremental design (9M customers — 1,000+ rolling-window features), recomputing only the ~6% of changed customers.</li>
+          <li><strong>Data Modeling &amp; BI:</strong> Architected denormalized SCD2 dimensional models powering daily Tableau dashboards and A/B-test tracking; built a customer-selection pipeline with predictive scoring that optimized a $10M annual budget and drove a 20% lift in conversion.</li>
+          <li><strong>Data Quality:</strong> Built a testing and statistical-profiling framework with regression checks to guarantee output stability and intercept volume anomalies.</li>
+        </ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-row">
+          <span class="entry-org">Nebraska Department of Health and Human Services (DHHS)</span>
+          <span class="entry-loc">Lincoln, NE</span>
+        </div>
+        <div class="entry-row">
+          <span class="entry-role">Statistical Analyst</span>
+          <span class="entry-dates">Aug 2017–May 2021</span>
+        </div>
+        <ul class="bullets">
+          <li><strong>Data Engineering &amp; Reporting:</strong> Built and optimized SQL Server + SAS ETL and reporting pipelines for 10+ recurring Medicaid / behavioral-health reporting processes, cutting run time 80% and standardizing metric definitions across statewide programs.</li>
+          <li><strong>BI &amp; Dashboards:</strong> Designed BI dashboards (SAS Visual Analytics / Tableau) tracking healthcare utilization, access, and outcome measures for statewide behavioral-health providers, giving program leadership self-service visibility into cost and quality.</li>
+          <li><strong>Data Quality &amp; Compliance:</strong> Developed data-quality monitoring across claims/encounter and provider systems and integrated member/provider/utilization data for population-health analyses, ensuring HIPAA and federal reporting compliance.</li>
+        </ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-row">
+          <span class="entry-org">GfK Retail and Technology</span>
+          <span class="entry-loc">Remote</span>
+        </div>
+        <div class="entry-row">
+          <span class="entry-role">Data Analyst</span>
+          <span class="entry-dates">May 2013–Sep 2015</span>
+        </div>
+        <ul class="bullets">
+          <li>Transformed and visualized complex sales data from 268 Chinese cities into actionable market-intelligence reports.</li>
+          <li>Automated weekly/monthly reporting with Excel &amp; VBA and improved data quality via statistical sample-selection optimization, reducing costs 15%.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">Education &amp; Certifications</h2>
+
+      <div class="entry">
+        <div class="entry-row">
+          <span class="entry-org">University of Nebraska-Lincoln</span>
+          <span class="entry-dates">Jan 2020–May 2022</span>
+        </div>
+        <div class="entry-row">
+          <span class="entry-role">M.S., Computer Science</span>
+          <span class="entry-loc">Lincoln, NE</span>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="entry-row">
+          <span class="entry-org">Zhejiang University of Finance and Economics</span>
+          <span class="entry-dates">Sep 2008–Jun 2012</span>
+        </div>
+        <div class="entry-row">
+          <span class="entry-role">B.S., Economics</span>
+          <span class="entry-loc">Hangzhou, China</span>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="entry-row">
+          <span class="entry-org">Certification: dbt Fundamentals Badge</span>
+          <span class="entry-dates">Mar 2026</span>
+        </div>
+        <div class="edu-detail">dbt, BigQuery</div>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>

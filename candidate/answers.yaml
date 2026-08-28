@@ -1,0 +1,66 @@
+- key: years-work-experience-python-programming-language
+  question: How many years of work experience do you have with Python (Programming Language)?
+  answer_type: number
+  answer: '5'
+  variants: []
+  scope: global
+  asked_at: '2026-08-27'
+  first_seen:
+    company: Leap Metrics
+    job_url: https://www.linkedin.com/jobs/view/4384888610
+  reuse_count: 1
+- key: completed-following-level-education-bachelor-s
+  question: 'Have you completed the following level of education: Bachelor''s Degree?'
+  answer_type: boolean
+  answer: 'Yes'
+  variants: []
+  scope: global
+  asked_at: '2026-08-27'
+  first_seen:
+    company: Leap Metrics
+    job_url: https://www.linkedin.com/jobs/view/4384888610
+  reuse_count: 1
+- key: comfortable-working-hybrid-setting
+  question: Are you comfortable working in a hybrid setting?
+  answer_type: boolean
+  answer: 'Yes'
+  variants: []
+  scope: global
+  asked_at: '2026-08-27'
+  first_seen:
+    company: Leap Metrics
+    job_url: https://www.linkedin.com/jobs/view/4384888610
+  reuse_count: 1
+- key: salary-expectations
+  question: What are your salary expectations?
+  answer_type: freetext
+  answer: Negotiable
+  variants: []
+  scope: global
+  asked_at: '2026-08-27'
+  first_seen:
+    company: Leap Metrics
+    job_url: https://www.linkedin.com/jobs/view/4384888610
+  reuse_count: 1
+- key: years-healthcare
+  question: How many years in Healthcare do you have?
+  answer_type: number
+  answer: '3'
+  variants: []
+  scope: global
+  asked_at: '2026-08-27'
+  first_seen:
+    company: Leap Metrics
+    job_url: https://www.linkedin.com/jobs/view/4384888610
+  reuse_count: 1
+- key: location-region-currently-reside
+  question: What location region do you currently reside in?
+  answer_type: choice
+  answer: Central (CT)
+  variants: []
+  scope: global
+  asked_at: '2026-08-27'
+  first_seen:
+    company: MetaSense, Inc.
+    job_url: https://www.dice.com/job-detail/714dcd73-aa48-45f0-9c32-aa8a5af87434
+  reuse_count: 1
