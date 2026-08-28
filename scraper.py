@@ -137,6 +137,16 @@ def main():
 
     combined = pd.concat(frames, ignore_index=True)[COLUMNS]
 
+    # Sort newest first. date_posted mixes 'YYYY-MM-DD' (indeed/linkedin) with
+    # ISO-8601 'YYYY-MM-DDTHH:MM:SSZ' (dice), so sort on the date prefix parsed
+    # to a real date; unparseable or missing dates sink to the bottom.
+    combined["_posted"] = pd.to_datetime(
+        combined["date_posted"].astype(str).str[:10], errors="coerce"
+    )
+    combined = combined.sort_values(
+        "_posted", ascending=False, na_position="last"
+    ).drop(columns="_posted")
+
     if args.out:
         out_path = args.out
     else:

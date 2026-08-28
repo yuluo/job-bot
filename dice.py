@@ -28,7 +28,7 @@ def _strip_html(text):
     text = re.sub(r"<(br|/p|/li|/div|/tr|/ul|/h[1-6])[^>]*>", "\n", text, flags=re.I)
     text = re.sub(r"<[^>]+>", " ", text)
     text = html.unescape(text)
-    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"[ \t\xa0]+", " ", text)
     text = re.sub(r"\s*\n\s*", "\n", text)
     return text.strip()
 
@@ -48,13 +48,20 @@ def fetch_description(session, url):
     resp = session.get(url, headers=BROWSER_HEADERS, timeout=20)
     resp.raise_for_status()
     blob = _decode_rsc_blob(resp.text)
-    ref = re.search(r'"description":"\$([0-9a-fA-F]+)"', blob)
+    # The full description is the job-detail module's dangerouslySetInnerHTML,
+    # a flight reference ("$49") to a "49:T<byte-len>,<content>" chunk later in
+    # the same blob. Dice renamed the field (it is no longer "description") and
+    # stopped newline-delimiting the chunks, so follow the reference explicitly.
+    ref = re.search(
+        r'jobDescription","dangerouslySetInnerHTML":\{"__html":"\$([0-9a-fA-F]+)"\}',
+        blob,
+    )
     if not ref:
         return None
-    chunk = re.search(r"(?:^|\n)%s:T([0-9a-fA-F]+)," % ref.group(1), blob)
+    chunk = re.search(r"(?<![0-9a-fA-F])%s:T([0-9a-fA-F]+)," % ref.group(1), blob)
     if not chunk:
         return None
-    length = int(chunk.group(1), 16)
+    length = int(chunk.group(1), 16)  # UTF-8 byte length, not a char count
     raw = blob.encode("utf-8")
     start = len(blob[: chunk.end()].encode("utf-8"))
     return _strip_html(raw[start : start + length].decode("utf-8", "ignore"))
